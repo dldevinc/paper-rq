@@ -26,4 +26,17 @@ INSTALLED_APPS = (
 )
 ```
 
+Add `paper_rq` to your `PAPER_MENU`:
+```python
+PAPER_MENU = [
+    # ...
+    dict(
+        app="paper_rq",
+        icon="fa fa-fw fa-lg fa-clock-o",
+    ),
+    # ...
+]
+```
+
+## Result
 [![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
