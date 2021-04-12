@@ -37,9 +37,21 @@ Commiting will now automatically run the local hooks and ensure that
 your commit passes all lint checks.
 
 ## Testing
-
-To run unit tests:
-
+Run Django server:
 ```shell
-pytest
+cd ./tests
+python3 manage.py migrate
+python3 manage.py createsuperuser
+python3 manage.py runserver
+```
+
+Put some tasks into queue:
+```python
+import random
+import django_rq
+from time import sleep
+
+queue = django_rq.get_queue()
+for _ in range(30):
+   queue.enqueue(sleep, random.randint(5, 30))
 ```

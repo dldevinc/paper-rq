@@ -1,4 +1,5 @@
 import os
+from django.utils.translation import gettext_lazy as _
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -20,12 +21,15 @@ ALLOWED_HOSTS = ["*"]
 # Application definition
 
 INSTALLED_APPS = [
+    "paper_admin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_rq",
+    "paper_rq",
     "app",
 ]
 
@@ -96,3 +100,28 @@ STATIC_ROOT = os.path.abspath(os.path.join(BASE_DIR, "static"))
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
 FILE_UPLOAD_PERMISSIONS = 0o666
+
+# RQ
+RQ_QUEUES = {
+    "default": {
+        "URL": "redis://127.0.0.1:6379/1",
+        "DEFAULT_TIMEOUT": "20m"
+    }
+}
+
+# =============
+#  Paper Admin
+# =============
+PAPER_MENU = [
+    dict(
+        label=_("Dashboard"),
+        url="admin:index",
+        icon="fa fa-fw fa-lg fa-area-chart",
+    ),
+    dict(
+        app="paper_rq",
+        icon="fa fa-fw fa-lg fa-clock-o",
+    ),
+    "-",
+    "auth",
+]

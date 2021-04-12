@@ -1,12 +1,13 @@
 # paper-rq
-An administrative interface for managing RQ tasks in Paper Admin
+An administrative interface for managing RQ tasks in Paper Admin.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 [![Build Status](https://travis-ci.com/dldevinc/paper-rq.svg?branch=master)](https://travis-ci.org/dldevinc/paper-rq)
 [![Software license](https://img.shields.io/pypi/l/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 
 ## Compatibility
-* `django` >= 2.0
+* [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 2.0
+* [`django-rq`](https://github.com/rq/django-rq) >= 2.4
 * `python` >= 3.6
 
 ## Installation
@@ -24,3 +25,5 @@ INSTALLED_APPS = (
     "paper_rq",
 )
 ```
+
+[![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)

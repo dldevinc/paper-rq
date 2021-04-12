@@ -1,0 +1,13 @@
+{% extends "paper_admin/includes/changelist_tools.html" %}
+{% load i18n admin_urls %}
+
+
+{% block tools %}
+  {{ block.super }}
+
+  <a href="{% url cl.opts|admin_urlname:'clear' result.obj.pk %}" class="tool-item text-danger"
+     data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
+     data-html="true" title="{% trans 'Clear queue' %}">
+    <i class="fa fa-fw fa-trash"></i>
+  </a>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+
+{% block header_buttons %}
+  <li class="nav-item d-lg-none">
+    <a href="{% url opts|admin_urlname:'requeue' object_id %}" class="tool-item text-info"
+       data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
+       data-html="true" title="{% trans 'Requeue job' %}">
+      <i class="fa fa-fw fa-repeat"></i>
+    </a>
+  </li>
+
+  {{ block.super }}
+{% endblock %}
+
+
+{% block toolbar-items %}
+  <a href="{% url opts|admin_urlname:'requeue' object_id %}" class="btn btn-block btn-info">
+    <i class="fa fa-fw fa-repeat"></i>
+    <span>{% trans 'Requeue job' %}</span>
+  </a>
+
+  {{ block.super }}
+{% endblock %}
