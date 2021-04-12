@@ -12,7 +12,7 @@ before_install:
 
 branches:
   only:
-    - master
+    - main
     - dev
     - '/^v?\d(\.\d+)+$/'
 
@@ -29,7 +29,7 @@ deploy:
   skip_cleanup: true
   user: __token__
   password:
-    secure: PLEASE_REPLACE_ME
+    secure: TI2n48qcPM9HKoGxNVeC9KHw/IODNFG2jB1o00ejKhl1K3xAFxc8Qew1Nu+aBryFAo+03X2lGccJqkkk2ppzCUl0pG6DH3ORy18TKQ7/qL+Nyq0j2VTtLjVTJMyN/EZHNPa87OimUrDvg8GhLxIKL03jH0fg9K75puIHafb37zGt1jf/q964fpGn9kgQePovJ2daZT0/sY+wlkYmyzNBgeBl+p29xJ3unEOossqgJs2AVVN7hA+kfzlbgHHNwqqvq+ytbGLVA6j0V/CnyQ73LO/A04NgLjxf+6boIe9GGSmjn+UKp5G9Dwkqks35AqdV6kHw0yvgVQeAFT/Q+p6LTTpbEgNhu5JsfAUUPf+e7kp61LMJnowEG7y95nBHyXs9k8RY2mV4LPIJ30gYemOoPIYsZ4fpkXNEA5FJjQ5zaYgv3CDd2vSLQtVxke/vBYpHJsNUOGJg5lGJ0cUJxbE0w1vzxfdSbfs2LCLhjO0ZLm3fgRhK90gkj4lA0GQRktYkCR/rFFnTq9j+W36eu3c3CjNZuDSKgDzQRsRdq1gOC10QWv6u6CBOO+RGZr5Qkqiw3MJOta+Gh4KJVdLGxSNxq8BmTMD2L3xeJp5CzYrDnqtW5udo22XPIWEpWKBwfUhytNRmal8D/S72nHRGbqXC4jxZxqQyCVYJcQR3beaAwQs=
   on:
     repo: dldevinc/paper-rq
     condition: $TRAVIS_PYTHON_VERSION = 3.8
