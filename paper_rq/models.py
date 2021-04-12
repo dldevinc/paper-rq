@@ -147,11 +147,15 @@ class JobManager(BaseManager):
 
 class JobModel(models.Model):
     id = models.TextField(_("ID"), primary_key=True)
-    queue = models.TextField(_("Queue"))
+    queue = models.TextField(_("queue"))
     description = models.TextField(_("description"))
-    created_at = models.DateTimeField(_("Created at"))
-    enqueued_at = models.DateTimeField(_("Enqueued at"), null=True)
-    ended_at = models.DateTimeField(_("Ended at"), null=True)
+    callable = models.TextField(_("callable"))
+    result = models.TextField(_("result"))
+    exception = models.TextField(_("exception"))
+    meta = models.TextField(_("meta"))
+    created_at = models.DateTimeField(_("created at"))
+    enqueued_at = models.DateTimeField(_("enqueued at"), null=True)
+    ended_at = models.DateTimeField(_("ended at"), null=True)
 
     objects = JobManager()
 
@@ -169,6 +173,10 @@ class JobModel(models.Model):
             id=job.id,
             queue=job.origin,
             description=job.description,
+            callable=job.get_call_string(),
+            result=job.result,
+            exception=job.exc_info,
+            meta=job.meta,
             created_at=job.created_at,
             enqueued_at=job.enqueued_at,
             ended_at=job.ended_at,

@@ -388,7 +388,7 @@ class JobModelAdmin(RedisModelAdminBase):
         }),
         (_("Callable"), {
             "fields": (
-                "func_name", "result", "exception", "meta",
+                "callable_display", "result_display", "exception_display", "meta_display",
             )
         }),
         (_("Important Dates"), {
@@ -518,31 +518,24 @@ class JobModelAdmin(RedisModelAdminBase):
             return timedelta(seconds=seconds)
     ttl.short_description = _("TTL")
 
-    def func_name(self, obj):
-        if obj.job:
-            try:
-                return format_html("<code>{}</code>", obj.job.get_call_string())
-            except Exception as e:
-                return repr(e)
-    func_name.short_description = _("Callable")
+    def callable_display(self, obj):
+        return format_html("<code>{}</code>", obj.callable)
+    callable_display.short_description = JobModel._meta.get_field("callable").verbose_name
 
-    def meta(self, obj):
-        if obj.job:
-            return obj.job.meta
-    meta.short_description = _("Meta")
-
-    def exception(self, obj):
-        if obj.job:
-            if obj.job.exc_info:
-                return format_html("<pre>{}</pre>", obj.job.exc_info)
-
+    def result_display(self, obj):
+        if obj.result:
+            return format_html("<pre>{}</pre>", obj.result)
         return "-"
-    exception.short_description = _("Exception")
+    result_display.short_description = JobModel._meta.get_field("result").verbose_name
 
-    def result(self, obj):
-        if obj.job:
-            if obj.job.result:
-                return format_html("<pre>{}</pre>", obj.job.result)
-
+    def exception_display(self, obj):
+        if obj.exception:
+            return format_html("<pre>{}</pre>", obj.exception)
         return "-"
-    result.short_description = _("Result")
+    exception_display.short_description = JobModel._meta.get_field("exception").verbose_name
+
+    def meta_display(self, obj):
+        if obj.meta:
+            return obj.meta
+        return "-"
+    meta_display.short_description = JobModel._meta.get_field("meta").verbose_name
