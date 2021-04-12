@@ -66,16 +66,15 @@ class ListQuerySet:
         if not field_names:
             return self
 
-        # TODO: multifield support
-        # TODO: None support
-        order_field = field_names[0]
+        object_list = self._wrapped.copy()
+        for fieldname in reversed(field_names):
+            object_list = sorted(
+                object_list,
+                key=attrgetter(fieldname.lstrip("-")),
+                reverse=fieldname.startswith("-")
+            )
 
-        ordered = sorted(
-            self._wrapped,
-            key=attrgetter(order_field.lstrip("-")),
-            reverse=order_field.startswith("-")
-        )
-        return type(self)(self.model, ordered)
+        return type(self)(self.model, object_list)
 
     def distinct(self, *field_names):
         return self
