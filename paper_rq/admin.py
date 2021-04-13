@@ -402,6 +402,7 @@ class JobModelAdmin(RedisModelAdminBase):
     object_history = False
     actions = [requeue_job_action]
     ordering = ["-created_at"]
+    search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
     list_display = ["id", "queue", "status", "enqueued_at", "created_at"]
 
@@ -415,6 +416,26 @@ class JobModelAdmin(RedisModelAdminBase):
             path('<path:object_id>/requeue/', self.admin_site.admin_view(self.requeue_view), name='%s_%s_requeue' % info),
         )
         return urlpatterns
+
+    def get_search_results(self, request, queryset, search_term):
+        search_fields = self.get_search_fields(request)
+        if search_fields and search_term:
+            search_term = search_term.lower()
+
+            # collect IDs of matching jobs
+            object_ids = set()
+            for fieldname in search_fields:
+                filtered = filter(
+                    lambda m: (getattr(m, fieldname) or "").lower().find(search_term) >= 0,
+                    queryset,
+                )
+                object_ids.update(m.pk for m in filtered)
+
+            # filter job with preserved order
+            object_list = (item for item in queryset if item.pk in object_ids)
+            queryset = type(queryset)(queryset.model, object_list)
+
+        return queryset, False
 
     def requeue_view(self, request, object_id):
         opts = self.model._meta
