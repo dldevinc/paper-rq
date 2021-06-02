@@ -6,7 +6,7 @@ An administrative interface for managing RQ tasks in Paper Admin.
 [![Software license](https://img.shields.io/pypi/l/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 
 ## Compatibility
-* [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 2.0
+* [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 3.0
 * [`django-rq`](https://github.com/rq/django-rq) >= 2.4
 * `python` >= 3.6
 
@@ -21,7 +21,7 @@ Add `paper_rq` to your INSTALLED_APPS in django's `settings.py`:
 
 ```python
 INSTALLED_APPS = (
-    # other apps
+    # ...
     "paper_rq",
 )
 ```
