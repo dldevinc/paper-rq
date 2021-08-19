@@ -6,20 +6,24 @@
   {{ block.super }}
 
   <li class="nav-item d-lg-none">
-    <a href="{% url opts|admin_urlname:'clear' object_id %}" class="tool-item text-danger"
+    {% url url opts|admin_urlname:'clear' object_id|admin_urlquote as clear_url %}
+    <a href="{% add_preserved_filters clear_url %}" class="nav-link"
        data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
-       data-html="true" title="{% trans 'Clear queue' %}">
-      <i class="fa fa-fw fa-trash"></i>
+       data-html="true" title="{{ _("Clear queue") }}">
+      <i class="fa fa-refresh text-danger"></i>
     </a>
   </li>
 {% endblock %}
 
 
-{% block toolbar-items %}
+{% block object-tools-items %}
   {{ block.super }}
 
-  <a href="{% url opts|admin_urlname:'clear' object_id %}" class="btn btn-block btn-outline-danger">
-    <i class="fa fa-fw fa-trash"></i>
-    <span>{% trans 'Clear queue' %}</span>
-  </a>
+  <li>
+    {% url opts|admin_urlname:'clear' object_id|admin_urlquote as clear_url %}
+    <a href="{% add_preserved_filters clear_url %}" class="btn btn-block btn-danger">
+      <i class="fa fa-refresh"></i>
+      <span>{{ _("Clear queue") }}</span>
+    </a>
+  </li>
 {% endblock %}

@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from paper_admin.admin.filters import SimpleListFilter
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
@@ -19,8 +20,6 @@ from rq.registry import (
     clean_registries,
 )
 from rq.worker_registration import clean_worker_registry
-
-from paper_admin.admin.filters import SimpleListFilter
 
 from .helpers import get_all_queues, requeue_job
 from .list_queryset import ListQuerySet

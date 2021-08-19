@@ -4,10 +4,11 @@
 
 {% block header_buttons %}
   <li class="nav-item d-lg-none">
-    <a href="{% url opts|admin_urlname:'requeue' object_id %}" class="tool-item text-info"
+    {% url url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
+    <a href="{% add_preserved_filters requeue_url %}" class="btn btn-square btn-sm btn-square--danger"
        data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
-       data-html="true" title="{% trans 'Requeue job' %}">
-      <i class="fa fa-fw fa-repeat"></i>
+       data-html="true" title="{{ _("Requeue job") }}">
+      <i class="fa fa-repeat text-info"></i>
     </a>
   </li>
 
@@ -15,11 +16,14 @@
 {% endblock %}
 
 
-{% block toolbar-items %}
-  <a href="{% url opts|admin_urlname:'requeue' object_id %}" class="btn btn-block btn-info">
-    <i class="fa fa-fw fa-repeat"></i>
-    <span>{% trans 'Requeue job' %}</span>
-  </a>
+{% block object-tools-items %}
+  <li>
+    {% url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
+    <a href="{% add_preserved_filters requeue_url %}" class="btn btn-block btn-info">
+      <i class="fa fa-repeat"></i>
+      <span>{{ _("Requeue job") }}</span>
+    </a>
+  </li>
 
   {{ block.super }}
 {% endblock %}
