@@ -1,3 +1,5 @@
+import inspect
+
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.functional import cached_property
@@ -169,11 +171,25 @@ class JobModel(models.Model):
 
     @classmethod
     def from_job(cls, job):
+        if job.instance:
+            if inspect.isclass(job.instance):
+                instance_class = job.instance
+            else:
+                instance_class = job.instance.__class__
+
+            callable = "{}.{}.{}".format(
+                instance_class.__module__,
+                instance_class.__qualname__,
+                job.get_call_string()
+            )
+        else:
+            callable = job.get_call_string()
+
         return cls(
             id=job.id,
             queue=job.origin,
             description=job.description,
-            callable=job.get_call_string(),
+            callable=callable,
             result=job.result,
             exception=job.exc_info,
             meta=job.meta,
