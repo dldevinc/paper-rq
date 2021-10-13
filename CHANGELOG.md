@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.3.1](https://github.com/dldevinc/paper-rq/tree/v0.3.1) - 2021-10-13
+### Features
+- Improve display of `callable` field in admin UI for class methods.
+- Added `timeout` field in admin UI.
+
 ## [0.3.0](https://github.com/dldevinc/paper-rq/tree/v0.3.0) - 2021-08-19
 ### ⚠ BREAKING CHANGES
 - Requires `paper-admin` >= 3.0 

@@ -1,3 +1,5 @@
+import inspect
+
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.utils.functional import cached_property
@@ -6,8 +8,8 @@ from django_rq.queues import get_queue
 from django_rq.settings import QUEUES_LIST
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
-from rq.worker import Worker
 from rq.queue import Queue
+from rq.worker import Worker
 
 from .helpers import get_all_connections, get_all_jobs, get_all_workers
 from .list_queryset import ListQuerySet
@@ -149,6 +151,7 @@ class JobModel(models.Model):
     id = models.TextField(_("ID"), primary_key=True)
     queue = models.TextField(_("queue"))
     description = models.TextField(_("description"))
+    timeout = models.TextField(_("timeout"))
     callable = models.TextField(_("callable"))
     result = models.TextField(_("result"))
     exception = models.TextField(_("exception"))
@@ -169,11 +172,26 @@ class JobModel(models.Model):
 
     @classmethod
     def from_job(cls, job):
+        if job.instance:
+            if inspect.isclass(job.instance):
+                instance_class = job.instance
+            else:
+                instance_class = job.instance.__class__
+
+            callable = "{}.{}.{}".format(
+                instance_class.__module__,
+                instance_class.__qualname__,
+                job.get_call_string()
+            )
+        else:
+            callable = job.get_call_string()
+
         return cls(
             id=job.id,
             queue=job.origin,
             description=job.description,
-            callable=job.get_call_string(),
+            timeout=_("Infinite") if job.timeout is None else str(job.timeout),
+            callable=callable,
             result=job.result,
             exception=job.exc_info,
             meta=job.meta,

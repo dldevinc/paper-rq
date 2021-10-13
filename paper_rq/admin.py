@@ -382,7 +382,7 @@ class JobModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "id", "description", "queue", "dependency", "original", "ttl", "status",
+                "id", "description", "queue", "dependency", "original", "timeout", "ttl", "status",
             )
         }),
         (_("Callable"), {
@@ -486,7 +486,7 @@ class JobModelAdmin(RedisModelAdminBase):
                     'obj': str(obj),
                 },
                 messages.SUCCESS,
-                )
+            )
 
         info = self.model._meta.app_label, self.model._meta.model_name
         post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
