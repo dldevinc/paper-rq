@@ -6,8 +6,8 @@ from django_rq.queues import get_queue
 from django_rq.settings import QUEUES_LIST
 from rq.exceptions import NoSuchJobError
 from rq.job import Job
-from rq.worker import Worker
 from rq.queue import Queue
+from rq.worker import Worker
 
 from .helpers import get_all_connections, get_all_jobs, get_all_workers
 from .list_queryset import ListQuerySet
