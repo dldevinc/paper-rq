@@ -382,7 +382,7 @@ class JobModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "id", "description", "queue", "dependency", "original", "ttl", "status",
+                "id", "description", "queue", "dependency", "original", "timeout", "ttl", "status",
             )
         }),
         (_("Callable"), {

@@ -151,6 +151,7 @@ class JobModel(models.Model):
     id = models.TextField(_("ID"), primary_key=True)
     queue = models.TextField(_("queue"))
     description = models.TextField(_("description"))
+    timeout = models.TextField(_("timeout"))
     callable = models.TextField(_("callable"))
     result = models.TextField(_("result"))
     exception = models.TextField(_("exception"))
@@ -189,6 +190,7 @@ class JobModel(models.Model):
             id=job.id,
             queue=job.origin,
             description=job.description,
+            timeout=_("Infinite") if job.timeout is None else str(job.timeout),
             callable=callable,
             result=job.result,
             exception=job.exc_info,
