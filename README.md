@@ -2,7 +2,7 @@
 An administrative interface for managing RQ tasks in Paper Admin.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-rq.svg)](https://pypi.org/project/paper-rq/)
-[![Build Status](https://travis-ci.com/dldevinc/paper-rq.svg?branch=master)](https://travis-ci.org/dldevinc/paper-rq)
+[![Build Status](https://github.com/dldevinc/paper-admin/actions/workflows/release.yml/badge.svg)](https://github.com/dldevinc/paper-rq)
 [![Software license](https://img.shields.io/pypi/l/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 
 ## Compatibility
