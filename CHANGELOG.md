@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.2](https://github.com/dldevinc/paper-rq/tree/v0.3.2) - 2021-10-14
+### Features
+- Add support for `rq-scheduler`.
+
 ## [0.3.1](https://github.com/dldevinc/paper-rq/tree/v0.3.1) - 2021-10-13
 ### Features
 - Improve display of `callable` field in admin UI for class methods.
