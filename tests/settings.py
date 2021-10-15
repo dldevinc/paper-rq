@@ -105,8 +105,12 @@ FILE_UPLOAD_PERMISSIONS = 0o666
 RQ_QUEUES = {
     "default": {
         "URL": "redis://127.0.0.1:6379/1",
-        "DEFAULT_TIMEOUT": "20m"
-    }
+        "DEFAULT_TIMEOUT": "5m"
+    },
+    "low": {
+        "URL": "redis://127.0.0.1:6379/1",
+        "DEFAULT_TIMEOUT": "60m"
+    },
 }
 
 # =============

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="rqworker" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="rqscheduler" type="PythonConfigurationType" factoryName="Python">
     <module name="paper-rq" />
     <option name="INTERPRETER_OPTIONS" value="" />
     <option name="PARENT_ENVS" value="true" />
@@ -23,7 +23,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="manage.py" />
-    <option name="PARAMETERS" value="rqworker default low --skip-checks --pid /tmp/rqworker.pid" />
+    <option name="PARAMETERS" value="rqscheduler --queue default --skip-checks --pid /tmp/rqworker.pid" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

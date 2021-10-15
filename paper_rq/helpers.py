@@ -1,7 +1,13 @@
-from django_rq import get_queue
+from datetime import datetime
+
+import pytz
+from django.core.exceptions import ImproperlyConfigured
+from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
-from rq.job import Job
+from rq.compat import as_text
+from rq.exceptions import NoSuchJobError
+from rq.job import Job, JobStatus
 from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
 from rq.worker import Worker
@@ -31,7 +37,43 @@ def get_all_workers():
         yield from Worker.all(connection=connection)
 
 
+def get_scheduled_jobs():
+    """
+    Получение задач из rq-scheduler.
+
+    Удаляет запланированные задачи из finished_job_registry и failed_job_registry
+    чтобы избежать повторения задачи в интерфейсе администратора.
+    """
+    for queue in get_all_queues():
+        try:
+            scheduler = get_scheduler()
+        except ImproperlyConfigured:
+            continue
+
+        for job in scheduler.get_jobs():
+            if job.origin != queue.name:
+                continue
+
+            with queue.connection.pipeline() as pipe:
+                if job in queue.finished_job_registry:
+                    queue.finished_job_registry.remove(job, pipeline=pipe)
+
+                if job in queue.failed_job_registry:
+                    queue.failed_job_registry.remove(job, pipeline=pipe)
+
+                # Всем задачам следует иметь статус scheduled, чтобы их
+                # можно было найти в интерфейсе администратора.
+                if job.get_status(refresh=False) != JobStatus.SCHEDULED:
+                    job.set_status(JobStatus.SCHEDULED, pipeline=pipe)
+
+                pipe.execute()
+
+            yield job
+
+
 def get_all_jobs():
+    yield from get_scheduled_jobs()
+
     for queue in get_all_queues():
         job_ids = queue.get_job_ids()
         yield from queue.job_class.fetch_many(job_ids, connection=queue.connection)
