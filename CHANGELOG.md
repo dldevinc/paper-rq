@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.3.3](https://github.com/dldevinc/paper-rq/tree/v0.3.3) - 2021-12-09
+### Bug Fixes
+- Fixed issue with queue name other than `default`. 
+
 ## [0.3.2](https://github.com/dldevinc/paper-rq/tree/v0.3.2) - 2021-10-14
 ### Features
 - Add support for `rq-scheduler`.

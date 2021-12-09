@@ -46,7 +46,7 @@ def get_scheduled_jobs():
     """
     for queue in get_all_queues():
         try:
-            scheduler = get_scheduler()
+            scheduler = get_scheduler(name=queue.name)
         except ImproperlyConfigured:
             continue
 
