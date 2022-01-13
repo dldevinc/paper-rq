@@ -3,11 +3,13 @@ from datetime import timedelta
 from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
 from django.contrib.admin.utils import model_ngettext, unquote
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
+from django.utils import formats, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from django_rq import get_scheduler
 from paper_admin.admin.filters import SimpleListFilter
 from rq.job import JobStatus
 from rq.queue import Queue
@@ -282,7 +284,7 @@ class WorkerModelAdmin(RedisModelAdminBase):
                     job=job.id
                 )
 
-        return "-"
+        return self.get_empty_value_display()
     job.short_description = _("Current job")
 
     def successful_job_count(self, obj):
@@ -392,7 +394,7 @@ class JobModelAdmin(RedisModelAdminBase):
         }),
         (_("Important Dates"), {
             "fields": (
-                "created_at", "enqueued_at", "ended_at"
+                "created_at", "scheduled_on", "enqueued_at", "ended_at"
             )
         }),
     )
@@ -513,7 +515,7 @@ class JobModelAdmin(RedisModelAdminBase):
                     job=dependency_id
                 )
 
-        return "-"
+        return self.get_empty_value_display()
     dependency.short_description = _("Depends On")
 
     def original(self, obj):
@@ -527,7 +529,7 @@ class JobModelAdmin(RedisModelAdminBase):
                     job=orig_job_id
                 )
 
-        return "-"
+        return self.get_empty_value_display()
     original.short_description = _("Requeued From")
 
     def ttl(self, obj):
@@ -545,17 +547,35 @@ class JobModelAdmin(RedisModelAdminBase):
     def result_display(self, obj):
         if obj.result:
             return format_html("<pre>{}</pre>", obj.result)
-        return "-"
+        return self.get_empty_value_display()
     result_display.short_description = JobModel._meta.get_field("result").verbose_name
 
     def exception_display(self, obj):
         if obj.exception:
             return format_html("<pre>{}</pre>", obj.exception)
-        return "-"
+        return self.get_empty_value_display()
     exception_display.short_description = JobModel._meta.get_field("exception").verbose_name
 
     def meta_display(self, obj):
         if obj.meta:
             return obj.meta
-        return "-"
+        return self.get_empty_value_display()
     meta_display.short_description = JobModel._meta.get_field("meta").verbose_name
+
+    def scheduled_on(self, obj):
+        if obj.job.is_scheduled:
+            for queue in get_all_queues():
+                try:
+                    scheduler = get_scheduler(name=queue.name)
+                except ImproperlyConfigured:
+                    continue
+
+                for job, scheduled_on in scheduler.get_jobs_to_queue(with_times=True):
+                    if job.origin != queue.name:
+                        continue
+
+                    if job.id == obj.id:
+                        return formats.localize(timezone.template_localtime(scheduled_on))
+
+        return self.get_empty_value_display()
+    scheduled_on.short_description = _("Scheduled on")
