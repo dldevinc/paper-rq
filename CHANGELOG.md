@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.4.0](https://github.com/dldevinc/paper-rq/tree/v0.4.0) - 2022-01-13
+### ⚠ BREAKING CHANGES
+- Add support for Python 3.10 and Django 4.0.
+
 ## [0.3.3](https://github.com/dldevinc/paper-rq/tree/v0.3.3) - 2021-12-09
 ### Bug Fixes
 - Fixed issue with queue name other than `default`. 
