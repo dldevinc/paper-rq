@@ -1,12 +1,7 @@
-from datetime import datetime
-
-import pytz
 from django.core.exceptions import ImproperlyConfigured
 from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
-from rq.compat import as_text
-from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
 from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
