@@ -562,7 +562,7 @@ class JobModelAdmin(RedisModelAdminBase):
 
     def status(self, obj):
         if obj.job:
-            return obj.status
+            return obj.status.value
     status.short_description = _("Status")
 
     def dependency(self, obj):

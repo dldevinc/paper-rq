@@ -6,7 +6,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_rq.queues import get_queue
 from django_rq.settings import QUEUES_LIST
-from rq.job import Job
+from rq.job import Job, JobStatus
 from rq.queue import Queue
 from rq.worker import Worker
 
@@ -205,4 +205,4 @@ class JobModel(models.Model):
 
     @property
     def status(self):
-        return self.job.get_status(refresh=False)
+        return JobStatus(self.job.get_status(refresh=False))

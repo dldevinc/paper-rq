@@ -6,6 +6,8 @@
 ### Features
 - Add ability to stop a job execution.
 - Add support for `stopped` and `cancelled` jobs.
+### Bug Fixes
+- Fixed a bug that did not allow filtering jobs by status value.
 
 ## [0.4.0](https://github.com/dldevinc/paper-rq/tree/v0.4.0) - 2022-01-13
 ### ⚠ BREAKING CHANGES
