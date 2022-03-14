@@ -6,12 +6,11 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_rq.queues import get_queue
 from django_rq.settings import QUEUES_LIST
-from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.queue import Queue
 from rq.worker import Worker
 
-from .helpers import get_all_connections, get_all_jobs, get_all_workers
+from .helpers import get_all_jobs, get_all_workers, get_job
 from .list_queryset import ListQuerySet
 
 
@@ -140,9 +139,9 @@ class JobManager(BaseManager):
             pk = kwargs.pop("id", None)
 
         if pk is not None:
-            for job in get_all_jobs():
-                if job.id == pk:
-                    return self.model.from_job(job)
+            job = get_job(pk)
+            if job is not None:
+                return self.model.from_job(job)
 
         raise self.model.DoesNotExist
 
@@ -202,11 +201,7 @@ class JobModel(models.Model):
 
     @cached_property
     def job(self) -> Job:
-        for connection in get_all_connections():
-            try:
-                return Job.fetch(self.id, connection=connection)
-            except NoSuchJobError:
-                pass
+        return get_job(self.id)
 
     @property
     def status(self):
