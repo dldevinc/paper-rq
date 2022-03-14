@@ -1,6 +1,10 @@
 # Change Log
 
-## [0.5.0](https://github.com/dldevinc/paper-rq/tree/v0.4.1) - 2022-03-14
+## [0.5.1](https://github.com/dldevinc/paper-rq/tree/v0.5.1) - 2022-03-15
+### Bug Fixes
+- Fixed canceling scheduled jobs.
+
+## [0.5.0](https://github.com/dldevinc/paper-rq/tree/v0.5.0) - 2022-03-14
 ### ⚠ BREAKING CHANGES
 - Drop support for Django 2.1.
 ### Features

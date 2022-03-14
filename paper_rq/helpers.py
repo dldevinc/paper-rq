@@ -108,17 +108,20 @@ def requeue_job(job: Job):
     """
     Повторный запуск задачи.
 
-    Для задач в статусе failed и finished создаётся новая задача,
-    с новый ID и очищенными полями result и exc_info. Это сделано
-    для удобства логирования. ID исходной задачи сохраняется
-    в meta["original_job"].
+    Для задач в статусе failed, finished или canceled создаётся новая
+    задача, с новым ID и очищенными полями result и exc_info. Это сделано
+    для удобства логирования. ID исходной задачи сохраняется в meta["original_job"].
 
     Отложенная задача (со статусом scheduled) перемещается в текущую
     очередь на выполнение.
+
+    (!) Если запланированная (scheduled) задача была отменена (canceled),
+    этот метод создаст новую *одноразовую* задачу, которая будет выполнена
+    в ближайшее время.
     """
     queue = get_queue(job.origin)
 
-    if job.is_failed or job.is_finished:
+    if job.is_failed or job.is_finished or job.is_canceled:
         with queue.connection.pipeline() as pipe:
             job.created_at = utcnow()
             job.meta = {"original_job": job.id}

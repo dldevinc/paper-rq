@@ -522,6 +522,17 @@ class JobModelAdmin(RedisModelAdminBase):
             send_stop_job_command(job.connection, job.id)
         elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
             pass
+        elif obj.status is JobStatus.SCHEDULED:
+            for queue in get_all_queues():
+                try:
+                    scheduler = get_scheduler(name=queue.name)
+                except ImproperlyConfigured:
+                    continue
+
+                if job in scheduler:
+                    scheduler.cancel(job)
+                    job.cancel()
+                    break
         else:
             job.cancel()
 
