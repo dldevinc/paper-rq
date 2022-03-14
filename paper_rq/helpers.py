@@ -2,6 +2,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
+from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
 from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
@@ -79,11 +80,28 @@ def get_all_jobs():
             queue.scheduled_job_registry,
             queue.finished_job_registry,
             queue.failed_job_registry,
+            queue.canceled_job_registry,
         ]
 
         for registry in registries:
             job_ids = registry.get_job_ids()
-            yield from registry.job_class.fetch_many(job_ids, connection=registry.connection)
+            for job in registry.job_class.fetch_many(job_ids, connection=registry.connection):
+                if job is not None:
+                    yield job
+
+
+def get_job(job_id, job_class=Job):
+    """
+    Получение задачи по ID.
+
+    Может найти задачу, которая удалена из очереди (например, вследствие вывова
+    метода `cancel()`).
+    """
+    for connection in get_all_connections():
+        try:
+            return job_class.fetch(job_id, connection=connection)
+        except NoSuchJobError:
+            pass
 
 
 def requeue_job(job: Job):

@@ -11,6 +11,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django_rq import get_scheduler
 from paper_admin.admin.filters import SimpleListFilter
+from rq.command import send_stop_job_command
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
@@ -19,6 +20,7 @@ from rq.registry import (
     FinishedJobRegistry,
     ScheduledJobRegistry,
     StartedJobRegistry,
+    CanceledJobRegistry,
     clean_registries,
 )
 from rq.worker_registration import clean_worker_registry
@@ -102,8 +104,8 @@ class QueueModelAdmin(RedisModelAdminBase):
     ordering = ["order"]
     actions = [clear_queue_action]
     list_display = ["name", "queued_jobs", "started_jobs", "deferred_jobs",
-                    "scheduled_jobs", "finished_jobs", "failed_jobs", "workers",
-                    "location", "db_index"]
+                    "scheduled_jobs", "finished_jobs", "failed_jobs", "canceled_jobs",
+                    "workers", "location", "db_index"]
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -180,6 +182,12 @@ class QueueModelAdmin(RedisModelAdminBase):
             failed_job_registry = FailedJobRegistry(obj.name, obj.queue.connection)
             return len(failed_job_registry)
     failed_jobs.short_description = _("Failed Jobs")
+
+    def canceled_jobs(self, obj):
+        if obj.queue:
+            canceled_job_registry = CanceledJobRegistry(obj.name, obj.queue.connection)
+            return len(canceled_job_registry)
+    canceled_jobs.short_description = _("Canceled Jobs")
 
     def workers(self, obj):
         if obj.queue:
@@ -351,6 +359,8 @@ class JobStatusFilter(SimpleListFilter):
             (JobStatus.STARTED, _("Started")),
             (JobStatus.FINISHED, _("Finished")),
             (JobStatus.FAILED, _("Failed")),
+            (JobStatus.STOPPED, _("Stopped")),
+            (JobStatus.CANCELED, _("Canceled")),
         )
 
     def queryset(self, request, queryset):
@@ -368,8 +378,9 @@ class JobStatusFilter(SimpleListFilter):
 def requeue_job_action(modeladmin, request, queryset):
     count = 0
     for job_model in queryset:
-        if job_model.job:
-            requeue_job(job_model.job)
+        job = job_model.job
+        if job:
+            requeue_job(job)
             count += 1
 
     messages.success(request, _("Successfully enqueued %(count)d %(items)s.") % {
@@ -377,6 +388,29 @@ def requeue_job_action(modeladmin, request, queryset):
         "items": model_ngettext(modeladmin.opts, count)
     })
 requeue_job_action.short_description = _("Requeue selected jobs")
+
+
+def stop_job_action(modeladmin, request, queryset):
+    count = 0
+    for job_model in queryset:
+        job = job_model.job
+        if job is None:
+            continue
+
+        if job_model.status is JobStatus.STARTED:
+            send_stop_job_command(job.connection, job.id)
+        elif job_model.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
+            continue
+        else:
+            job.cancel()
+
+        count += 1
+
+    messages.success(request, _("Successfully stopped %(count)d %(items)s.") % {
+        "count": count,
+        "items": model_ngettext(modeladmin.opts, count)
+    })
+stop_job_action.short_description = _("Stop selected jobs")
 
 
 @admin.register(JobModel)
@@ -401,7 +435,7 @@ class JobModelAdmin(RedisModelAdminBase):
     change_form_template = "paper_rq/job_changeform.html"
     changelist_tools_template = "paper_rq/job_changelist_tools.html"
     object_history = False
-    actions = [requeue_job_action]
+    actions = [requeue_job_action, stop_job_action]
     ordering = ["-created_at"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
@@ -415,6 +449,10 @@ class JobModelAdmin(RedisModelAdminBase):
         urlpatterns.insert(
             -1,
             path('<path:object_id>/requeue/', self.admin_site.admin_view(self.requeue_view), name='%s_%s_requeue' % info),
+        )
+        urlpatterns.insert(
+            -1,
+            path('<path:object_id>/stop/', self.admin_site.admin_view(self.stop_view), name='%s_%s_stop' % info),
         )
         return urlpatterns
 
@@ -467,6 +505,29 @@ class JobModelAdmin(RedisModelAdminBase):
         post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
+    def stop_view(self, request, object_id):
+        opts = self.model._meta
+        info = opts.app_label, opts.model_name
+
+        obj = self.get_object(request, unquote(object_id))
+        if obj is None:
+            return self._get_obj_does_not_exist_redirect(request, opts, object_id)
+
+        if not self.has_manage_permission(request, obj):
+            raise PermissionDenied
+
+        job = obj.job
+
+        if obj.status is JobStatus.STARTED:
+            send_stop_job_command(job.connection, job.id)
+        elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
+            pass
+        else:
+            job.cancel()
+
+        post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
+        return HttpResponseRedirect(post_url)
+
     def delete_view(self, request, object_id, extra_context=None):
         opts = self.model._meta
 
@@ -479,6 +540,11 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
+            # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
+            # не удаляет задачу из регистра.
+            if job.is_stopped:
+                job.failed_job_registry.remove(job, pipeline=job.connection)
+
             job.delete()
 
             self.message_user(
@@ -496,12 +562,18 @@ class JobModelAdmin(RedisModelAdminBase):
 
     def delete_queryset(self, request, queryset):
         for job_model in queryset:
-            if job_model.job:
+            job = job_model.job
+            if job:
+                # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                # не удаляет задачу из регистра.
+                if job.is_stopped:
+                    job.failed_job_registry.remove(job, pipeline=job.connection)
+
                 job_model.job.delete()
 
     def status(self, obj):
         if obj.job:
-            return obj.status
+            return obj.status.value
     status.short_description = _("Status")
 
     def dependency(self, obj):

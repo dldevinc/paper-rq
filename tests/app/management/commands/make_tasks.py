@@ -1,14 +1,10 @@
 import random
-import time
 from datetime import timedelta
 
 import django_rq
 from django.core.management.base import BaseCommand
 from rq import get_current_job
-
-
-def sleep_task(delay):
-    time.sleep(delay)
+from ...tasks import sleep_task
 
 
 def generate_random_number():
