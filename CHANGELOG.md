@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.0](https://github.com/dldevinc/paper-rq/tree/v0.4.1) - 2022-03-14
+### ⚠ BREAKING CHANGES
+- Drop support for Django 2.1.
+### Features
+- Add ability to stop a job execution.
+- Add support for `stopped` and `cancelled` jobs.
+
 ## [0.4.0](https://github.com/dldevinc/paper-rq/tree/v0.4.0) - 2022-01-13
 ### ⚠ BREAKING CHANGES
 - Add support for Python 3.10 and Django 4.0.
