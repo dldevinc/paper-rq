@@ -85,7 +85,9 @@ def get_all_jobs():
 
         for registry in registries:
             job_ids = registry.get_job_ids()
-            yield from registry.job_class.fetch_many(job_ids, connection=registry.connection)
+            for job in registry.job_class.fetch_many(job_ids, connection=registry.connection):
+                if job is not None:
+                    yield job
 
 
 def get_job(job_id, job_class=Job):
