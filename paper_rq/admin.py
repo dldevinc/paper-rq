@@ -647,7 +647,7 @@ class JobModelAdmin(RedisModelAdminBase):
                         continue
 
                     if job.id == obj.id:
-                        return formats.localize(timezone.template_localtime(scheduled_on))
+                        return formats.localize(scheduled_on.astimezone(timezone.utc))
 
         return self.get_empty_value_display()
     scheduled_on.short_description = _("Scheduled on")

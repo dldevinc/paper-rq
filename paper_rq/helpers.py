@@ -59,7 +59,7 @@ def get_scheduled_jobs():
 
                 # Всем задачам следует иметь статус scheduled, чтобы их
                 # можно было найти в интерфейсе администратора.
-                if job.get_status(refresh=False) != JobStatus.SCHEDULED:
+                if job.get_status(refresh=False) is None:
                     job.set_status(JobStatus.SCHEDULED, pipeline=pipe)
 
                 pipe.execute()
