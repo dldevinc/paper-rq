@@ -1,6 +1,8 @@
 # Change Log
 
 ## [0.5.1](https://github.com/dldevinc/paper-rq/tree/v0.5.1) - 2022-03-15
+### Features
+- Add `Stop job` button to the Job changeform.
 ### Bug Fixes
 - Fixed canceling scheduled jobs.
 
