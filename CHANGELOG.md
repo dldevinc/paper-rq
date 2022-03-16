@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.5.2](https://github.com/dldevinc/paper-rq/tree/v0.5.2) - 2022-03-16
+### Bug Fixes
+- Fixed job search.
+
 ## [0.5.1](https://github.com/dldevinc/paper-rq/tree/v0.5.1) - 2022-03-15
 ### Features
 - Add `Stop job` button to the Job changeform.

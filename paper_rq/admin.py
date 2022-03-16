@@ -353,14 +353,14 @@ class JobStatusFilter(SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            (JobStatus.QUEUED, _("Queued")),
-            (JobStatus.DEFERRED, _("Deferred")),
-            (JobStatus.SCHEDULED, _("Scheduled")),
-            (JobStatus.STARTED, _("Started")),
-            (JobStatus.FINISHED, _("Finished")),
-            (JobStatus.FAILED, _("Failed")),
-            (JobStatus.STOPPED, _("Stopped")),
-            (JobStatus.CANCELED, _("Canceled")),
+            (JobStatus.QUEUED.value, _("Queued")),
+            (JobStatus.DEFERRED.value, _("Deferred")),
+            (JobStatus.SCHEDULED.value, _("Scheduled")),
+            (JobStatus.STARTED.value, _("Started")),
+            (JobStatus.FINISHED.value, _("Finished")),
+            (JobStatus.FAILED.value, _("Failed")),
+            (JobStatus.STOPPED.value, _("Stopped")),
+            (JobStatus.CANCELED.value, _("Canceled")),
         )
 
     def queryset(self, request, queryset):
@@ -465,7 +465,7 @@ class JobModelAdmin(RedisModelAdminBase):
             object_ids = set()
             for fieldname in search_fields:
                 filtered = filter(
-                    lambda m: (getattr(m, fieldname) or "").lower().find(search_term) >= 0,
+                    lambda m: str(getattr(m, fieldname)).lower().find(search_term) >= 0,
                     queryset,
                 )
                 object_ids.update(m.pk for m in filtered)
