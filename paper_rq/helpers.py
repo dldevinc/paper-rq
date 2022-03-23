@@ -57,9 +57,10 @@ def get_scheduled_jobs():
                 if job in queue.failed_job_registry:
                     queue.failed_job_registry.remove(job, pipeline=pipe)
 
-                # Всем задачам следует иметь статус scheduled, чтобы их
-                # можно было найти в интерфейсе администратора.
-                if job.get_status(refresh=False) is None:
+                # Повторяющиеся задачи после первого выполнения получают
+                # статус FINISHED. Это может ввести в заблуждение пользователя
+                # в интерфейсе администратора.
+                if job.get_status(refresh=False) != JobStatus.SCHEDULED:
                     job.set_status(JobStatus.SCHEDULED, pipeline=pipe)
 
                 pipe.execute()

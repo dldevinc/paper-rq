@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.5.3](https://github.com/dldevinc/paper-rq/tree/v0.5.3) - 2022-03-23
+### Bug Fixes
+- Prevent scheduled jobs from changing status after they first run.
+
 ## [0.5.2](https://github.com/dldevinc/paper-rq/tree/v0.5.2) - 2022-03-16
 ### Bug Fixes
 - Fixed job search.
