@@ -40,3 +40,24 @@ PAPER_MENU = [
 
 ## Result
 [![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
+
+
+## RQ Scheduler
+
+First you need to make sure you have the `rq-scheduler` library installed:
+```shell
+pip install rq-scheduler
+```
+
+If you need to run multiple isolated schedulers, you can use the class
+`paper_rq.scheduler.Scheduler`. It reads the Redis keys from the `RQ` setting:
+
+```python
+# settings.py
+
+RQ = {
+    "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
+    "SCHEDULER_LOCK_KEY": "rq:scheduler-1:scheduler_lock",
+    "SCHEDULER_JOBS_KEY": "rq:scheduler-1:scheduled_jobs",
+}
+```

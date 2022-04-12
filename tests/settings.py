@@ -103,6 +103,11 @@ MEDIA_ROOT = os.path.abspath(os.path.join(BASE_DIR, "media"))
 FILE_UPLOAD_PERMISSIONS = 0o666
 
 # RQ
+RQ = {
+    "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
+    "SCHEDULER_LOCK_KEY": "rq:scheduler:paper:scheduler_lock",
+    "SCHEDULER_JOBS_KEY": "rq:scheduler:paper:scheduled_jobs",
+}
 RQ_QUEUES = {
     "default": {
         "URL": "redis://127.0.0.1:6379/1",

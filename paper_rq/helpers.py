@@ -73,7 +73,9 @@ def get_all_jobs():
 
     for queue in get_all_queues():
         job_ids = queue.get_job_ids()
-        yield from queue.job_class.fetch_many(job_ids, connection=queue.connection)
+        for job in queue.job_class.fetch_many(job_ids, connection=queue.connection):
+            if job is not None:
+                yield job
 
         registries = [
             queue.started_job_registry,
