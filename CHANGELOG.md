@@ -1,6 +1,8 @@
 # Change Log
 
 ## [0.5.4](https://github.com/dldevinc/paper-rq/tree/v0.5.4) - 2022-04-12
+### Features
+- Add custom scheduler class.
 ### Bug Fixes
 - Fix an issue with expired jobs in the queue.
 - Ignore jobs that raise a `DeserializationError`.
