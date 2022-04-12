@@ -1,4 +1,5 @@
 import inspect
+import logging
 
 from django.db import models
 from django.db.models.manager import BaseManager
@@ -6,6 +7,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_rq.queues import get_queue
 from django_rq.settings import QUEUES_LIST
+from rq.exceptions import DeserializationError
 from rq.job import Job, JobStatus
 from rq.queue import Queue
 from rq.worker import Worker
@@ -128,8 +130,13 @@ class JobManager(BaseManager):
     def all(self):
         jobs = ListQuerySet(self.model)
         for job in get_all_jobs():
-            obj = self.model.from_job(job)
-            jobs.append(obj)
+            try:
+                obj = self.model.from_job(job)
+            except DeserializationError:
+                logging.exception("An error occurred during deserialization the Job “{}”".format(job.id))
+                continue
+            else:
+                jobs.append(obj)
 
         return jobs
 
