@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
 from django.contrib.admin.utils import model_ngettext, unquote
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -439,7 +440,7 @@ class JobModelAdmin(RedisModelAdminBase):
     ordering = ["-created_at"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
-    list_display = ["id", "queue", "status", "enqueued_at", "created_at"]
+    list_display = ["id_display", "queue", "status", "enqueued_at", "created_at"]
 
     def get_urls(self):
         from django.urls import path
@@ -587,6 +588,13 @@ class JobModelAdmin(RedisModelAdminBase):
             return obj.status.value
     status.short_description = _("Status")
 
+    def id_display(self, obj):
+        if obj.invalid:
+            icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
+            return format_html("<img src=\"{}\" width=20 height=20 class=\"align-text-bottom\" alt=\"\">"
+                               "<span class=\"ml-1\">{}</span>", icon_url, obj.id)
+        return obj.id
+
     def dependency(self, obj):
         if obj.job:
             dependency_id = obj.job._dependency_id
@@ -624,6 +632,12 @@ class JobModelAdmin(RedisModelAdminBase):
     ttl.short_description = _("TTL")
 
     def callable_display(self, obj):
+        if obj.invalid:
+            icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
+            return format_html("<code>"
+                               "<img src=\"{}\" width=20 height=20 alt=\"\">"
+                               "<span class=\"align-text-top ml-1\">{}</span>"
+                               "</code>", icon_url, _("Deserialization error"))
         return format_html("<code>{}</code>", obj.callable)
     callable_display.short_description = JobModel._meta.get_field("callable").verbose_name
 

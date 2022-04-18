@@ -3,43 +3,47 @@
 
 
 {% block header_buttons %}
-  <li class="nav-item d-lg-none">
-    <a href="{% url opts|admin_urlname:'stop' object_id|admin_urlquote %}" class="nav-link"
-       data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
-       data-html="true" title="{{ _("Stop job") }}">
-      <i class="fa fa-stop text-danger"></i>
-    </a>
-  </li>
+  {% if not original.invalid %}
+    <li class="nav-item d-lg-none">
+      <a href="{% url opts|admin_urlname:'stop' object_id|admin_urlquote %}" class="nav-link"
+         data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
+         data-html="true" title="{{ _("Stop job") }}">
+        <i class="fa fa-stop text-danger"></i>
+      </a>
+    </li>
 
-  <li class="nav-item d-lg-none">
-    {% url url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
-    <a href="{% add_preserved_filters requeue_url %}" class="nav-link"
-       data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
-       data-html="true" title="{{ _("Requeue job") }}">
-      <i class="fa fa-repeat text-info"></i>
-    </a>
-  </li>
+    <li class="nav-item d-lg-none">
+      {% url url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
+      <a href="{% add_preserved_filters requeue_url %}" class="nav-link"
+         data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
+         data-html="true" title="{{ _("Requeue job") }}">
+        <i class="fa fa-repeat text-info"></i>
+      </a>
+    </li>
+  {% endif %}
 
   {{ block.super }}
 {% endblock %}
 
 
 {% block object-tools-items %}
-  <li>
-    <a href="{% url opts|admin_urlname:'stop' object_id|admin_urlquote %}"
-       class="btn btn-block btn-danger">
-      <i class="fa fa-stop"></i>
-      <span>{{ _("Stop job") }}</span>
-    </a>
-  </li>
+  {% if not original.invalid %}
+    <li>
+      <a href="{% url opts|admin_urlname:'stop' object_id|admin_urlquote %}"
+         class="btn btn-block btn-danger">
+        <i class="fa fa-stop"></i>
+        <span>{{ _("Stop job") }}</span>
+      </a>
+    </li>
 
-  <li>
-    {% url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
-    <a href="{% add_preserved_filters requeue_url %}" class="btn btn-block btn-info">
-      <i class="fa fa-repeat"></i>
-      <span>{{ _("Requeue job") }}</span>
-    </a>
-  </li>
+    <li>
+      {% url opts|admin_urlname:'requeue' object_id|admin_urlquote as requeue_url %}
+      <a href="{% add_preserved_filters requeue_url %}" class="btn btn-block btn-info">
+        <i class="fa fa-repeat"></i>
+        <span>{{ _("Requeue job") }}</span>
+      </a>
+    </li>
+  {% endif %}
 
   {{ block.super }}
 {% endblock %}

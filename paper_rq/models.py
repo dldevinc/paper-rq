@@ -166,6 +166,9 @@ class JobModel(models.Model):
     enqueued_at = models.DateTimeField(_("enqueued at"), null=True)
     ended_at = models.DateTimeField(_("ended at"), null=True)
 
+    # флаг, устанавливаемый при ошибках десериализации задач
+    invalid = models.BooleanField(_("invalid"), default=False, editable=False)
+
     objects = JobManager()
 
     class Meta:
@@ -178,19 +181,27 @@ class JobModel(models.Model):
 
     @classmethod
     def from_job(cls, job):
-        if job.instance:
-            if inspect.isclass(job.instance):
-                instance_class = job.instance
-            else:
-                instance_class = job.instance.__class__
+        invalid = False
 
-            job_callable = "{}.{}.{}".format(
-                instance_class.__module__,
-                instance_class.__qualname__,
-                job.get_call_string()
-            )
+        try:
+            job._deserialize_data()
+        except DeserializationError:
+            invalid = True
+            job_callable = None
         else:
-            job_callable = job.get_call_string()
+            if job.instance:
+                if inspect.isclass(job.instance):
+                    instance_class = job.instance
+                else:
+                    instance_class = job.instance.__class__
+
+                job_callable = "{}.{}.{}".format(
+                    instance_class.__module__,
+                    instance_class.__qualname__,
+                    job.get_call_string()
+                )
+            else:
+                job_callable = job.get_call_string()
 
         return cls(
             id=job.id,
@@ -204,6 +215,7 @@ class JobModel(models.Model):
             created_at=job.created_at,
             enqueued_at=job.enqueued_at,
             ended_at=job.ended_at,
+            invalid=invalid
         )
 
     @cached_property
