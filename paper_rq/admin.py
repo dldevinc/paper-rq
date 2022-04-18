@@ -552,12 +552,14 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
-            # не удаляет задачу из реестра.
-            if job.is_stopped:
-                job.failed_job_registry.remove(job, pipeline=job.connection)
+            with job.connection.pipeline() as pipe:
+                if job.is_stopped:
+                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                    # не удаляет задачу из реестра.
+                    job.failed_job_registry.remove(job, pipeline=pipe)
 
-            job.delete()
+                job.delete(pipeline=pipe)
+                pipe.execute()
 
             self.message_user(
                 request,
@@ -576,12 +578,14 @@ class JobModelAdmin(RedisModelAdminBase):
         for job_model in queryset:
             job = job_model.job
             if job:
-                # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
-                # не удаляет задачу из реестра.
-                if job.is_stopped:
-                    job.failed_job_registry.remove(job, pipeline=job.connection)
+                with job.connection.pipeline() as pipe:
+                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                    # не удаляет задачу из реестра.
+                    if job.is_stopped:
+                        job.failed_job_registry.remove(job, pipeline=pipe)
 
-                job_model.job.delete()
+                    job.delete(pipeline=pipe)
+                    pipe.execute()
 
     def status(self, obj):
         if obj.job:
