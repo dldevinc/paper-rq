@@ -1,5 +1,5 @@
 import time
 
 
-def sleep_task(delay):
+def sleep(delay):
     time.sleep(delay)
