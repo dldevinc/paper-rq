@@ -4,29 +4,28 @@ from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
 from django.contrib.admin.utils import model_ngettext, unquote
 from django.contrib.staticfiles.storage import staticfiles_storage
-from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import formats, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django_rq import get_scheduler
 from paper_admin.admin.filters import SimpleListFilter
 from rq.command import send_stop_job_command
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
+    CanceledJobRegistry,
     DeferredJobRegistry,
     FailedJobRegistry,
     FinishedJobRegistry,
     ScheduledJobRegistry,
     StartedJobRegistry,
-    CanceledJobRegistry,
     clean_registries,
 )
 from rq.worker_registration import clean_worker_registry
 
-from .helpers import get_all_queues, requeue_job
+from .helpers import get_all_queues, get_job_scheduler, requeue_job
 from .list_queryset import ListQuerySet
 from .models import JobModel, QueueModel, WorkerModel
 
@@ -524,16 +523,10 @@ class JobModelAdmin(RedisModelAdminBase):
         elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
             pass
         elif obj.status is JobStatus.SCHEDULED:
-            for queue in get_all_queues():
-                try:
-                    scheduler = get_scheduler(queue=queue)
-                except ImproperlyConfigured:
-                    continue
-
-                if job in scheduler:
-                    scheduler.cancel(job)
-                    job.cancel()
-                    break
+            scheduler = get_job_scheduler(job)
+            if scheduler:
+                scheduler.cancel(job)
+                job.cancel()
         else:
             job.cancel()
 
@@ -665,17 +658,10 @@ class JobModelAdmin(RedisModelAdminBase):
 
     def scheduled_on(self, obj):
         if obj.job.is_scheduled:
-            for queue in get_all_queues():
-                try:
-                    scheduler = get_scheduler(queue=queue)
-                except ImproperlyConfigured:
-                    continue
-
-                for job, scheduled_on in scheduler.get_jobs_to_queue(with_times=True):
-                    if job.origin != queue.name:
-                        continue
-
-                    if job.id == obj.id:
+            scheduler = get_job_scheduler(obj.job)
+            if scheduler:
+                for job, scheduled_on in scheduler.get_jobs(with_times=True):
+                    if job.origin == obj.job.origin and job.id == obj.id:
                         return formats.localize(scheduled_on.astimezone(timezone.utc))
 
         return self.get_empty_value_display()
