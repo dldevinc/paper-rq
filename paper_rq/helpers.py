@@ -149,13 +149,9 @@ def requeue_job(job: Job):
             pipe.hdel(new_job.key, "result")
             pipe.hdel(new_job.key, "exc_info")
             pipe.execute()
-    elif job.is_scheduled:
-        # Перемещение отложенной задачи в очередь на выполнение.
-        with job.connection.pipeline() as pipe:
-            new_job = queue.enqueue_job(job, pipeline=pipe)
-            queue.scheduled_job_registry.remove(job, pipeline=pipe)
-            pipe.execute()
-    else:
-        new_job = job
+            return new_job
+    elif job.is_scheduled and RQ_SHEDULER_SUPPORTED:
+        scheduler = get_job_scheduler(job)
+        scheduler.enqueue_job(job)
 
-    return new_job
+    return job
