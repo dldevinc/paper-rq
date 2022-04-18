@@ -525,7 +525,7 @@ class JobModelAdmin(RedisModelAdminBase):
         elif obj.status is JobStatus.SCHEDULED:
             for queue in get_all_queues():
                 try:
-                    scheduler = get_scheduler(name=queue.name)
+                    scheduler = get_scheduler(queue=queue)
                 except ImproperlyConfigured:
                     continue
 
@@ -551,8 +551,8 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
-            # не удаляет задачу из регистра.
+            # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+            # не удаляет задачу из реестра.
             if job.is_stopped:
                 job.failed_job_registry.remove(job, pipeline=job.connection)
 
@@ -575,8 +575,8 @@ class JobModelAdmin(RedisModelAdminBase):
         for job_model in queryset:
             job = job_model.job
             if job:
-                # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
-                # не удаляет задачу из регистра.
+                # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                # не удаляет задачу из реестра.
                 if job.is_stopped:
                     job.failed_job_registry.remove(job, pipeline=job.connection)
 
@@ -649,7 +649,7 @@ class JobModelAdmin(RedisModelAdminBase):
         if obj.job.is_scheduled:
             for queue in get_all_queues():
                 try:
-                    scheduler = get_scheduler(name=queue.name)
+                    scheduler = get_scheduler(queue=queue)
                 except ImproperlyConfigured:
                     continue
 

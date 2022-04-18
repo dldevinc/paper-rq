@@ -184,20 +184,20 @@ class JobModel(models.Model):
             else:
                 instance_class = job.instance.__class__
 
-            callable = "{}.{}.{}".format(
+            job_callable = "{}.{}.{}".format(
                 instance_class.__module__,
                 instance_class.__qualname__,
                 job.get_call_string()
             )
         else:
-            callable = job.get_call_string()
+            job_callable = job.get_call_string()
 
         return cls(
             id=job.id,
             queue=job.origin,
             description=job.description,
             timeout=_("Infinite") if job.timeout is None else str(job.timeout),
-            callable=callable,
+            callable=job_callable,
             result=job.result,
             exception=job.exc_info,
             meta=job.meta,

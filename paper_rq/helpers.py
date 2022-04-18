@@ -8,6 +8,12 @@ from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
 from rq.worker import Worker
 
+try:
+    import rq_scheduler
+    RQ_SHEDULER_SUPPORTED = True
+except ImportError:
+    RQ_SHEDULER_SUPPORTED = False
+
 
 def hashable_dict(dict_value):
     return ",".join(":".join(map(str, pair)) for pair in sorted(dict_value.items()))
@@ -42,7 +48,7 @@ def get_scheduled_jobs():
     """
     for queue in get_all_queues():
         try:
-            scheduler = get_scheduler(name=queue.name)
+            scheduler = get_scheduler(queue=queue)
         except ImproperlyConfigured:
             continue
 
