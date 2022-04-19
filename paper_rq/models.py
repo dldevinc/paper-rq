@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.db import models
@@ -212,3 +213,7 @@ class JobModel(models.Model):
     @property
     def status(self):
         return JobStatus(self.job.get_status(refresh=False))
+
+    @property
+    def enqueue_time(self):
+        return self.enqueued_at or datetime.datetime(datetime.MINYEAR, 1, 1)

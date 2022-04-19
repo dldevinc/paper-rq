@@ -436,10 +436,10 @@ class JobModelAdmin(RedisModelAdminBase):
     changelist_tools_template = "paper_rq/job_changelist_tools.html"
     object_history = False
     actions = [requeue_job_action, stop_job_action]
-    ordering = ["-created_at"]
+    ordering = ["-enqueue_time"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
-    list_display = ["id_display", "func_display", "queue", "status", "enqueued_at", "created_at"]
+    list_display = ["id_display", "func_display", "queue", "status", "enqueued_at_display"]
 
     def get_urls(self):
         from django.urls import path
@@ -608,6 +608,13 @@ class JobModelAdmin(RedisModelAdminBase):
             full_path=full_path
         )
     func_display.short_description = _("Function")
+
+    def enqueued_at_display(self, obj):
+        if obj.enqueued_at:
+            return obj.enqueued_at
+        return self.get_empty_value_display()
+    enqueued_at_display.short_description = JobModel._meta.get_field("enqueued_at").verbose_name
+    enqueued_at_display.admin_order_field = "enqueue_time"
 
     def dependency(self, obj):
         if obj.job:

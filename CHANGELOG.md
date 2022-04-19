@@ -4,6 +4,7 @@
 ### Features
 - Display job function.
 - Display jobs that raises `DeserializationError`.
+- Changed default job ordering.
 ### Bug Fixes
 - Fixed an issue with requeuing scheduled jobs. 
 
