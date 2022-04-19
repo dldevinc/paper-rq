@@ -122,6 +122,45 @@ def get_job_scheduler(job: Job):
         return scheduler
 
 
+def get_job_func_repr(job: Job) -> str:
+    """
+    Возвращает путь и аргументы функции, вызываемой указанным экземпляром Job.
+    """
+    if job.instance:
+        if isinstance(job.instance, type):
+            instance_class = job.instance
+        else:
+            instance_class = job.instance.__class__
+
+        return "{}.{}.{}".format(
+            instance_class.__module__,
+            instance_class.__qualname__,
+            job.get_call_string()
+        )
+
+    return job.get_call_string()
+
+
+def get_job_func_short_repr(job: Job) -> str:
+    """
+    Возвращает короткое описание функции, вызываемой указанным экземпляром Job.
+    """
+    if job.instance:
+        if isinstance(job.instance, type):
+            instance_class = job.instance
+        else:
+            instance_class = job.instance.__class__
+
+        return "{}.{}(...)".format(
+            instance_class.__qualname__,
+            job.func_name
+        )
+
+    return "{}(...)".format(
+        job.func_name.rsplit(".", 1)[-1]
+    )
+
+
 def requeue_job(job: Job):
     """
     Повторный запуск задачи.

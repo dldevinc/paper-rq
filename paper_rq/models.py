@@ -188,19 +188,7 @@ class JobModel(models.Model):
             invalid = True
             job_callable = None
         else:
-            if job.instance:
-                if inspect.isclass(job.instance):
-                    instance_class = job.instance
-                else:
-                    instance_class = job.instance.__class__
-
-                job_callable = "{}.{}.{}".format(
-                    instance_class.__module__,
-                    instance_class.__qualname__,
-                    job.get_call_string()
-                )
-            else:
-                job_callable = job.get_call_string()
+            job_callable = helpers.get_job_func_repr(job)
 
         return cls(
             id=job.id,

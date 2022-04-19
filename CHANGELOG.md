@@ -1,7 +1,8 @@
 # Change Log
 
-## [0.5.5](https://github.com/dldevinc/paper-rq/tree/v0.5.5) - 2022-04-18
+## [0.5.5](https://github.com/dldevinc/paper-rq/tree/v0.5.5) - 2022-04-19
 ### Features
+- Display job function.
 - Display jobs that raises `DeserializationError`.
 ### Bug Fixes
 - Fixed an issue with requeuing scheduled jobs. 

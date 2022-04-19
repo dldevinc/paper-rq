@@ -439,7 +439,7 @@ class JobModelAdmin(RedisModelAdminBase):
     ordering = ["-created_at"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
-    list_display = ["id_display", "queue", "status", "enqueued_at", "created_at"]
+    list_display = ["id_display", "func_display", "queue", "status", "enqueued_at", "created_at"]
 
     def get_urls(self):
         from django.urls import path
@@ -592,6 +592,22 @@ class JobModelAdmin(RedisModelAdminBase):
                                "<span class=\"ml-1\">{}</span>", icon_url, obj.id)
         return obj.id
     id_display.short_description = _("ID")
+
+    def func_display(self, obj):
+        if obj.invalid:
+            return ""
+
+        job = obj.job
+
+        full_path = helpers.get_job_func_repr(job)
+        short_path = helpers.get_job_func_short_repr(job)
+
+        return format_html(
+            '<span title="{full_path}">{short_path}</span>',
+            short_path=short_path,
+            full_path=full_path
+        )
+    func_display.short_description = _("Function")
 
     def dependency(self, obj):
         if obj.job:
