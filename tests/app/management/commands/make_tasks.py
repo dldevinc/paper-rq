@@ -4,7 +4,7 @@ from datetime import timedelta
 import django_rq
 from django.core.management.base import BaseCommand
 from rq import get_current_job
-from ...tasks import sleep_task
+from ...tasks import sleep
 
 
 def generate_random_number():
@@ -24,10 +24,10 @@ class Command(BaseCommand):
 
     def create_sleep_tasks(self):
         for _ in range(5):
-            self.default_queue.enqueue(sleep_task, 2)
+            self.default_queue.enqueue(sleep, 2)
 
         for _ in range(3):
-            self.low_queue.enqueue(sleep_task, 2)
+            self.low_queue.enqueue(sleep, 2)
 
     def create_deferred_tasks(self):
         for _ in range(5):
@@ -43,10 +43,10 @@ class Command(BaseCommand):
         Uses rq.Scheduler
         """
         for _ in range(5):
-            self.default_queue.enqueue_in(timedelta(seconds=60), sleep_task, 2)
+            self.default_queue.enqueue_in(timedelta(seconds=30), sleep, 2)
 
         for _ in range(3):
-            self.low_queue.enqueue_in(timedelta(seconds=60), sleep_task, 2)
+            self.low_queue.enqueue_in(timedelta(seconds=30), sleep, 2)
 
     def create_rq_scheduled_tasks(self):
         """
@@ -55,7 +55,7 @@ class Command(BaseCommand):
         scheduler = django_rq.get_scheduler("default")
 
         for _ in range(3):
-            scheduler.enqueue_in(timedelta(seconds=60), sleep_task, 2)
+            scheduler.enqueue_in(timedelta(seconds=60), sleep, 2)
 
     def handle(self, *args, **options):
         self.create_sleep_tasks()

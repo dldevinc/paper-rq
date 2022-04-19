@@ -1,12 +1,16 @@
-from django.core.exceptions import ImproperlyConfigured
 from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
 from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
-from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
 from rq.worker import Worker
+
+try:
+    import rq_scheduler
+    RQ_SHEDULER_SUPPORTED = True
+except ImportError:
+    RQ_SHEDULER_SUPPORTED = False
 
 
 def hashable_dict(dict_value):
@@ -40,12 +44,11 @@ def get_scheduled_jobs():
     Удаляет запланированные задачи из finished_job_registry и failed_job_registry
     чтобы избежать повторения задачи в интерфейсе администратора.
     """
-    for queue in get_all_queues():
-        try:
-            scheduler = get_scheduler(name=queue.name)
-        except ImproperlyConfigured:
-            continue
+    if not RQ_SHEDULER_SUPPORTED:
+        return
 
+    for queue in get_all_queues():
+        scheduler = get_scheduler(name=queue.name, queue=queue)
         for job in scheduler.get_jobs():
             if job.origin != queue.name:
                 continue
@@ -107,6 +110,57 @@ def get_job(job_id, job_class=Job):
             pass
 
 
+def get_job_scheduler(job: Job):
+    """
+    Пытается найти планировщик для указанной задачи.
+    """
+    if not RQ_SHEDULER_SUPPORTED:
+        return
+
+    scheduler = get_scheduler(job.origin)
+    if job in scheduler:
+        return scheduler
+
+
+def get_job_func_repr(job: Job) -> str:
+    """
+    Возвращает путь и аргументы функции, вызываемой указанным экземпляром Job.
+    """
+    if job.instance:
+        if isinstance(job.instance, type):
+            instance_class = job.instance
+        else:
+            instance_class = job.instance.__class__
+
+        return "{}.{}.{}".format(
+            instance_class.__module__,
+            instance_class.__qualname__,
+            job.get_call_string()
+        )
+
+    return job.get_call_string()
+
+
+def get_job_func_short_repr(job: Job) -> str:
+    """
+    Возвращает короткое описание функции, вызываемой указанным экземпляром Job.
+    """
+    if job.instance:
+        if isinstance(job.instance, type):
+            instance_class = job.instance
+        else:
+            instance_class = job.instance.__class__
+
+        return "{}.{}(...)".format(
+            instance_class.__qualname__,
+            job.func_name
+        )
+
+    return "{}(...)".format(
+        job.func_name.rsplit(".", 1)[-1]
+    )
+
+
 def requeue_job(job: Job):
     """
     Повторный запуск задачи.
@@ -133,12 +187,9 @@ def requeue_job(job: Job):
             pipe.hdel(new_job.key, "result")
             pipe.hdel(new_job.key, "exc_info")
             pipe.execute()
-    elif job.is_scheduled:
-        # Перемещение отложенной задачи в очередь на выполнение.
-        new_job = queue.enqueue_job(job)
-        registry = ScheduledJobRegistry(queue.name, queue.connection)
-        registry.remove(job)
-    else:
-        new_job = job
+            return new_job
+    elif job.is_scheduled and RQ_SHEDULER_SUPPORTED:
+        scheduler = get_job_scheduler(job)
+        scheduler.enqueue_job(job)
 
-    return new_job
+    return job

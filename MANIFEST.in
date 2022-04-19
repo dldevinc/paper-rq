@@ -2,6 +2,7 @@ include LICENSE
 include README.md
 include CHANGELOG.md
 
+recursive-include paper_rq *.svg
 recursive-include paper_rq *.html
 recursive-exclude tests *
 recursive-exclude * __pycache__

@@ -3,29 +3,29 @@ from datetime import timedelta
 from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
 from django.contrib.admin.utils import model_ngettext, unquote
-from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
+from django.contrib.staticfiles.storage import staticfiles_storage
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import formats, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django_rq import get_scheduler
 from paper_admin.admin.filters import SimpleListFilter
 from rq.command import send_stop_job_command
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
+    CanceledJobRegistry,
     DeferredJobRegistry,
     FailedJobRegistry,
     FinishedJobRegistry,
     ScheduledJobRegistry,
     StartedJobRegistry,
-    CanceledJobRegistry,
     clean_registries,
 )
 from rq.worker_registration import clean_worker_registry
 
-from .helpers import get_all_queues, requeue_job
+from . import helpers
 from .list_queryset import ListQuerySet
 from .models import JobModel, QueueModel, WorkerModel
 
@@ -223,7 +223,7 @@ class WorkerQueueFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         return [
             (queue.name, queue.name)
-            for queue in get_all_queues()
+            for queue in helpers.get_all_queues()
         ]
 
     def queryset(self, request, queryset):
@@ -331,7 +331,7 @@ class JobQueueFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         return [
             (queue.name, queue.name)
-            for queue in get_all_queues()
+            for queue in helpers.get_all_queues()
         ]
 
     def queryset(self, request, queryset):
@@ -380,7 +380,7 @@ def requeue_job_action(modeladmin, request, queryset):
     for job_model in queryset:
         job = job_model.job
         if job:
-            requeue_job(job)
+            helpers.requeue_job(job)
             count += 1
 
     messages.success(request, _("Successfully enqueued %(count)d %(items)s.") % {
@@ -436,10 +436,10 @@ class JobModelAdmin(RedisModelAdminBase):
     changelist_tools_template = "paper_rq/job_changelist_tools.html"
     object_history = False
     actions = [requeue_job_action, stop_job_action]
-    ordering = ["-created_at"]
+    ordering = ["-enqueue_time"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
-    list_display = ["id", "queue", "status", "enqueued_at", "created_at"]
+    list_display = ["id_display", "func_display", "queue", "status", "enqueued_at_display"]
 
     def get_urls(self):
         from django.urls import path
@@ -489,7 +489,7 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            new_job = requeue_job(job)
+            new_job = helpers.requeue_job(job)
 
             self.message_user(
                 request,
@@ -523,16 +523,10 @@ class JobModelAdmin(RedisModelAdminBase):
         elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
             pass
         elif obj.status is JobStatus.SCHEDULED:
-            for queue in get_all_queues():
-                try:
-                    scheduler = get_scheduler(name=queue.name)
-                except ImproperlyConfigured:
-                    continue
-
-                if job in scheduler:
-                    scheduler.cancel(job)
-                    job.cancel()
-                    break
+            scheduler = helpers.get_job_scheduler(job)
+            if scheduler:
+                scheduler.cancel(job)
+                job.cancel()
         else:
             job.cancel()
 
@@ -551,12 +545,14 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
-            # не удаляет задачу из регистра.
-            if job.is_stopped:
-                job.failed_job_registry.remove(job, pipeline=job.connection)
+            with job.connection.pipeline() as pipe:
+                if job.is_stopped:
+                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                    # не удаляет задачу из реестра.
+                    job.failed_job_registry.remove(job, pipeline=pipe)
 
-            job.delete()
+                job.delete(pipeline=pipe)
+                pipe.execute()
 
             self.message_user(
                 request,
@@ -575,17 +571,50 @@ class JobModelAdmin(RedisModelAdminBase):
         for job_model in queryset:
             job = job_model.job
             if job:
-                # Вероятный баг RQ: удаление задачи в статусе JobStatus.STOPPED
-                # не удаляет задачу из регистра.
-                if job.is_stopped:
-                    job.failed_job_registry.remove(job, pipeline=job.connection)
+                with job.connection.pipeline() as pipe:
+                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
+                    # не удаляет задачу из реестра.
+                    if job.is_stopped:
+                        job.failed_job_registry.remove(job, pipeline=pipe)
 
-                job_model.job.delete()
+                    job.delete(pipeline=pipe)
+                    pipe.execute()
 
     def status(self, obj):
         if obj.job:
             return obj.status.value
     status.short_description = _("Status")
+
+    def id_display(self, obj):
+        if obj.invalid:
+            icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
+            return format_html("<img src=\"{}\" width=20 height=20 class=\"align-text-bottom\" alt=\"\">"
+                               "<span class=\"ml-1\">{}</span>", icon_url, obj.id)
+        return obj.id
+    id_display.short_description = _("ID")
+
+    def func_display(self, obj):
+        if obj.invalid:
+            return ""
+
+        job = obj.job
+
+        full_path = helpers.get_job_func_repr(job)
+        short_path = helpers.get_job_func_short_repr(job)
+
+        return format_html(
+            '<span title="{full_path}">{short_path}</span>',
+            short_path=short_path,
+            full_path=full_path
+        )
+    func_display.short_description = _("Function")
+
+    def enqueued_at_display(self, obj):
+        if obj.enqueued_at:
+            return obj.enqueued_at
+        return self.get_empty_value_display()
+    enqueued_at_display.short_description = JobModel._meta.get_field("enqueued_at").verbose_name
+    enqueued_at_display.admin_order_field = "enqueue_time"
 
     def dependency(self, obj):
         if obj.job:
@@ -624,6 +653,12 @@ class JobModelAdmin(RedisModelAdminBase):
     ttl.short_description = _("TTL")
 
     def callable_display(self, obj):
+        if obj.invalid:
+            icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
+            return format_html("<code>"
+                               "<img src=\"{}\" width=20 height=20 alt=\"\">"
+                               "<span class=\"align-text-top ml-1\">{}</span>"
+                               "</code>", icon_url, _("Deserialization error"))
         return format_html("<code>{}</code>", obj.callable)
     callable_display.short_description = JobModel._meta.get_field("callable").verbose_name
 
@@ -647,17 +682,10 @@ class JobModelAdmin(RedisModelAdminBase):
 
     def scheduled_on(self, obj):
         if obj.job.is_scheduled:
-            for queue in get_all_queues():
-                try:
-                    scheduler = get_scheduler(name=queue.name)
-                except ImproperlyConfigured:
-                    continue
-
-                for job, scheduled_on in scheduler.get_jobs_to_queue(with_times=True):
-                    if job.origin != queue.name:
-                        continue
-
-                    if job.id == obj.id:
+            scheduler = helpers.get_job_scheduler(obj.job)
+            if scheduler:
+                for job, scheduled_on in scheduler.get_jobs(with_times=True):
+                    if job.origin == obj.job.origin and job.id == obj.id:
                         return formats.localize(scheduled_on.astimezone(timezone.utc))
 
         return self.get_empty_value_display()
