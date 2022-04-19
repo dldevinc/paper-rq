@@ -1,4 +1,3 @@
-import inspect
 import logging
 
 from django.db import models
@@ -12,7 +11,7 @@ from rq.job import Job, JobStatus
 from rq.queue import Queue
 from rq.worker import Worker
 
-from .helpers import get_all_jobs, get_all_workers, get_job
+from . import helpers
 from .list_queryset import ListQuerySet
 
 
@@ -73,7 +72,7 @@ class QueueModel(models.Model):
 class WorkerManager(BaseManager):
     def all(self):
         workers = ListQuerySet(self.model)
-        for worker in get_all_workers():
+        for worker in helpers.get_all_workers():
             obj = self.model.from_worker(worker)
             workers.append(obj)
 
@@ -85,7 +84,7 @@ class WorkerManager(BaseManager):
             pk = kwargs.pop("name", None)
 
         if pk is not None:
-            for worker in get_all_workers():
+            for worker in helpers.get_all_workers():
                 if worker.name == pk:
                     return self.model.from_worker(worker)
 
@@ -117,7 +116,7 @@ class WorkerModel(models.Model):
 
     @cached_property
     def worker(self) -> Worker:
-        for worker in get_all_workers():
+        for worker in helpers.get_all_workers():
             if worker.name == self.name:
                 return worker
 
@@ -129,7 +128,7 @@ class WorkerModel(models.Model):
 class JobManager(BaseManager):
     def all(self):
         jobs = ListQuerySet(self.model)
-        for job in get_all_jobs():
+        for job in helpers.get_all_jobs():
             try:
                 obj = self.model.from_job(job)
             except DeserializationError:
@@ -146,7 +145,7 @@ class JobManager(BaseManager):
             pk = kwargs.pop("id", None)
 
         if pk is not None:
-            job = get_job(pk)
+            job = helpers.get_job(pk)
             if job is not None:
                 return self.model.from_job(job)
 
@@ -220,7 +219,7 @@ class JobModel(models.Model):
 
     @cached_property
     def job(self) -> Job:
-        return get_job(self.id)
+        return helpers.get_job(self.id)
 
     @property
     def status(self):

@@ -25,7 +25,7 @@ from rq.registry import (
 )
 from rq.worker_registration import clean_worker_registry
 
-from .helpers import get_all_queues, get_job_scheduler, requeue_job
+from . import helpers
 from .list_queryset import ListQuerySet
 from .models import JobModel, QueueModel, WorkerModel
 
@@ -223,7 +223,7 @@ class WorkerQueueFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         return [
             (queue.name, queue.name)
-            for queue in get_all_queues()
+            for queue in helpers.get_all_queues()
         ]
 
     def queryset(self, request, queryset):
@@ -331,7 +331,7 @@ class JobQueueFilter(SimpleListFilter):
     def lookups(self, request, model_admin):
         return [
             (queue.name, queue.name)
-            for queue in get_all_queues()
+            for queue in helpers.get_all_queues()
         ]
 
     def queryset(self, request, queryset):
@@ -380,7 +380,7 @@ def requeue_job_action(modeladmin, request, queryset):
     for job_model in queryset:
         job = job_model.job
         if job:
-            requeue_job(job)
+            helpers.requeue_job(job)
             count += 1
 
     messages.success(request, _("Successfully enqueued %(count)d %(items)s.") % {
@@ -489,7 +489,7 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            new_job = requeue_job(job)
+            new_job = helpers.requeue_job(job)
 
             self.message_user(
                 request,
@@ -523,7 +523,7 @@ class JobModelAdmin(RedisModelAdminBase):
         elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
             pass
         elif obj.status is JobStatus.SCHEDULED:
-            scheduler = get_job_scheduler(job)
+            scheduler = helpers.get_job_scheduler(job)
             if scheduler:
                 scheduler.cancel(job)
                 job.cancel()
@@ -659,7 +659,7 @@ class JobModelAdmin(RedisModelAdminBase):
 
     def scheduled_on(self, obj):
         if obj.job.is_scheduled:
-            scheduler = get_job_scheduler(obj.job)
+            scheduler = helpers.get_job_scheduler(obj.job)
             if scheduler:
                 for job, scheduled_on in scheduler.get_jobs(with_times=True):
                     if job.origin == obj.job.origin and job.id == obj.id:
