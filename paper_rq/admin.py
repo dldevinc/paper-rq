@@ -591,6 +591,7 @@ class JobModelAdmin(RedisModelAdminBase):
             return format_html("<img src=\"{}\" width=20 height=20 class=\"align-text-bottom\" alt=\"\">"
                                "<span class=\"ml-1\">{}</span>", icon_url, obj.id)
         return obj.id
+    id_display.short_description = _("ID")
 
     def dependency(self, obj):
         if obj.job:

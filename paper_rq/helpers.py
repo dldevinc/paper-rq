@@ -3,7 +3,6 @@ from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
 from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
-from rq.registry import ScheduledJobRegistry
 from rq.utils import utcnow
 from rq.worker import Worker
 
@@ -49,7 +48,7 @@ def get_scheduled_jobs():
         return
 
     for queue in get_all_queues():
-        scheduler = get_scheduler(queue=queue)
+        scheduler = get_scheduler(name=queue.name, queue=queue)
         for job in scheduler.get_jobs():
             if job.origin != queue.name:
                 continue
