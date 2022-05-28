@@ -81,6 +81,8 @@ def clear_queue_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 clear_queue_action.short_description = _("Clear selected queues")
 
 
@@ -387,6 +389,8 @@ def requeue_job_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 requeue_job_action.short_description = _("Requeue selected jobs")
 
 
@@ -410,6 +414,8 @@ def stop_job_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 stop_job_action.short_description = _("Stop selected jobs")
 
 

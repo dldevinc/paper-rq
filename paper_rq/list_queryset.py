@@ -1,5 +1,5 @@
-from typing import NamedTuple
 from operator import attrgetter
+from typing import NamedTuple
 
 
 class PseudoQuery(NamedTuple):

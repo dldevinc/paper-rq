@@ -7,7 +7,7 @@ from rq.utils import utcnow
 from rq.worker import Worker
 
 try:
-    import rq_scheduler
+    import rq_scheduler  # noqa
     RQ_SHEDULER_SUPPORTED = True
 except ImportError:
     RQ_SHEDULER_SUPPORTED = False
