@@ -23,7 +23,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="manage.py" />
-    <option name="PARAMETERS" value="rqscheduler --queue default --skip-checks --pid /tmp/rqworker.pid" />
+    <option name="PARAMETERS" value="rqscheduler --queue paper:default --skip-checks --pid /tmp/rqscheduler.pid" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

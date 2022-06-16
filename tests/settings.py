@@ -109,11 +109,11 @@ RQ = {
     "SCHEDULER_JOBS_KEY": "rq:scheduler:paper:scheduled_jobs",
 }
 RQ_QUEUES = {
-    "default": {
+    "paper:default": {
         "URL": "redis://127.0.0.1:6379/1",
         "DEFAULT_TIMEOUT": "5m"
     },
-    "low": {
+    "paper:low": {
         "URL": "redis://127.0.0.1:6379/1",
         "DEFAULT_TIMEOUT": "60m"
     },

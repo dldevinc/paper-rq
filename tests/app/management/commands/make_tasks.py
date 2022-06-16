@@ -19,8 +19,8 @@ def pow_number():
 class Command(BaseCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, *kwargs)
-        self.default_queue = django_rq.get_queue("default")
-        self.low_queue = django_rq.get_queue("low")
+        self.default_queue = django_rq.get_queue("paper:default")
+        self.low_queue = django_rq.get_queue("paper:low")
 
     def create_sleep_tasks(self):
         for _ in range(5):
@@ -52,7 +52,7 @@ class Command(BaseCommand):
         """
         Uses rq-scheduler
         """
-        scheduler = django_rq.get_scheduler("default")
+        scheduler = django_rq.get_scheduler("paper:default")
 
         for _ in range(3):
             scheduler.enqueue_in(timedelta(seconds=60), sleep, 2)

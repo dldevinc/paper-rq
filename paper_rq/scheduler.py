@@ -14,10 +14,10 @@ class Scheduler(DefaultScheduler):
 
     @cached_property
     def scheduled_jobs_key(self):
-        RQ = getattr(settings, "RQ", {})
+        RQ = getattr(settings, "RQ", {})  # noqa: N806
         return RQ.get("SCHEDULER_JOBS_KEY", "rq:scheduler:scheduled_jobs")
 
     @cached_property
     def scheduler_lock_key(self):
-        RQ = getattr(settings, "RQ", {})
+        RQ = getattr(settings, "RQ", {})  # noqa: N806
         return RQ.get("SCHEDULER_LOCK_KEY", "rq:scheduler:scheduler_lock")

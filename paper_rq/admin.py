@@ -81,6 +81,8 @@ def clear_queue_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 clear_queue_action.short_description = _("Clear selected queues")
 
 
@@ -205,7 +207,10 @@ class QueueModelAdmin(RedisModelAdminBase):
     def location(self, obj):
         if obj.queue:
             connection_kwargs = obj.queue.connection.connection_pool.connection_kwargs
-            return "{0[host]}:{0[port]}".format(connection_kwargs)
+            return "{host}:{port}".format(
+                host=connection_kwargs.get("host", "localhost"),
+                port=connection_kwargs.get("port", 6379),
+            )
     location.short_description = _("Location")
 
     def db_index(self, obj):
@@ -313,7 +318,10 @@ class WorkerModelAdmin(RedisModelAdminBase):
     def location(self, obj):
         if obj.worker:
             connection_kwargs = obj.worker.connection.connection_pool.connection_kwargs
-            return "{0[host]}:{0[port]}".format(connection_kwargs)
+            return "{host}:{port}".format(
+                host=connection_kwargs.get("host", "localhost"),
+                port=connection_kwargs.get("port", 6379),
+            )
     location.short_description = _("Location")
 
     def db_index(self, obj):
@@ -387,6 +395,8 @@ def requeue_job_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 requeue_job_action.short_description = _("Requeue selected jobs")
 
 
@@ -410,6 +420,8 @@ def stop_job_action(modeladmin, request, queryset):
         "count": count,
         "items": model_ngettext(modeladmin.opts, count)
     })
+
+
 stop_job_action.short_description = _("Stop selected jobs")
 
 
