@@ -207,7 +207,10 @@ class QueueModelAdmin(RedisModelAdminBase):
     def location(self, obj):
         if obj.queue:
             connection_kwargs = obj.queue.connection.connection_pool.connection_kwargs
-            return "{0[host]}:{0[port]}".format(connection_kwargs)
+            return "{host}:{port}".format(
+                host=connection_kwargs.get("host", "localhost"),
+                port=connection_kwargs.get("port", 6379),
+            )
     location.short_description = _("Location")
 
     def db_index(self, obj):
@@ -315,7 +318,10 @@ class WorkerModelAdmin(RedisModelAdminBase):
     def location(self, obj):
         if obj.worker:
             connection_kwargs = obj.worker.connection.connection_pool.connection_kwargs
-            return "{0[host]}:{0[port]}".format(connection_kwargs)
+            return "{host}:{port}".format(
+                host=connection_kwargs.get("host", "localhost"),
+                port=connection_kwargs.get("port", 6379),
+            )
     location.short_description = _("Location")
 
     def db_index(self, obj):
