@@ -1,5 +1,9 @@
 # Change Log
 
+## [0.5.7](https://github.com/dldevinc/paper-rq/tree/v0.5.7) - 2022-06-17
+### Features
+- Display worker IP, hostname and date of last heartbeat.
+
 ## [0.5.6](https://github.com/dldevinc/paper-rq/tree/v0.5.6) - 2022-06-16
 ### Bug Fixes
 - Fixed an issue when Redis server is configured without port.
