@@ -248,12 +248,12 @@ class WorkerModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "name", "queues",
+                "name", "queues"
             )
         }),
         (_("State"), {
             "fields": (
-                "pid", "state", "job", "birth_date",
+                "state", "job",
             )
         }),
         (_("Statistics"), {
@@ -261,7 +261,12 @@ class WorkerModelAdmin(RedisModelAdminBase):
                 "successful_job_count", "failed_job_count", "total_working_time"
             )
         }),
-        (_("Server"), {
+        (_("Process"), {
+            "fields": (
+                "pid", "hostname", "ip_address", "birth_date", "last_heartbeat"
+            )
+        }),
+        (_("Redis server"), {
             "fields": (
                 "location", "db_index"
             )
@@ -271,7 +276,7 @@ class WorkerModelAdmin(RedisModelAdminBase):
     changelist_tools = False
     object_history = False
     list_filter = [WorkerQueueFilter]
-    list_display = ["name", "pid", "state", "birth_date", "location", "db_index"]
+    list_display = ["name", "pid", "hostname", "state", "birth_date", "location", "db_index"]
 
     def has_delete_permission(self, request, obj=None):
         return False

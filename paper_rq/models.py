@@ -94,8 +94,11 @@ class WorkerManager(BaseManager):
 
 class WorkerModel(models.Model):
     name = models.TextField(_("name"), primary_key=True)
-    birth_date = models.DateTimeField(_("birth date"))
     pid = models.PositiveIntegerField(_("PID"))
+    hostname = models.CharField(_("Hostname"), max_length=128)
+    ip_address = models.CharField(_("IP address"), max_length=64)
+    birth_date = models.DateTimeField(_("birth date"))
+    last_heartbeat = models.DateTimeField(_("last heartbeat"), null=True)
 
     objects = WorkerManager()
 
@@ -111,8 +114,11 @@ class WorkerModel(models.Model):
     def from_worker(cls, worker):
         return cls(
             name=worker.name,
+            pid=worker.pid,
+            hostname=worker.hostname[:128],
+            ip_address=worker.ip_address,
             birth_date=worker.birth_date,
-            pid=worker.pid
+            last_heartbeat=getattr(worker, "last_heartbeat", None)
         )
 
     @cached_property
