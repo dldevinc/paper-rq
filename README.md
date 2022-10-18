@@ -1,4 +1,5 @@
 # paper-rq
+
 An administrative interface for managing RQ tasks in Paper Admin.
 
 [![PyPI](https://img.shields.io/pypi/v/paper-rq.svg)](https://pypi.org/project/paper-rq/)
@@ -6,11 +7,13 @@ An administrative interface for managing RQ tasks in Paper Admin.
 [![Software license](https://img.shields.io/pypi/l/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 
 ## Compatibility
-* [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 3.0
-* [`django-rq`](https://github.com/rq/django-rq) >= 2.4
-* `python` >= 3.6
+
+-   [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 3.0
+-   [`django-rq`](https://github.com/rq/django-rq) >= 2.4
+-   `python` >= 3.6
 
 ## Installation
+
 Install the latest release with pip:
 
 ```shell
@@ -27,6 +30,7 @@ INSTALLED_APPS = (
 ```
 
 Add `paper_rq` to your `PAPER_MENU`:
+
 ```python
 PAPER_MENU = [
     # ...
@@ -39,12 +43,13 @@ PAPER_MENU = [
 ```
 
 ## Result
-[![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
 
+[![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
 
 ## RQ Scheduler
 
 First you need to make sure you have the `rq-scheduler` library installed:
+
 ```shell
 pip install rq-scheduler
 ```
