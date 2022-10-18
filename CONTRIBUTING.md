@@ -22,10 +22,23 @@
     pip install -r ./requirements.txt
     pip install -e .
     ```
+1. Run test project
+
+    ```shell
+    python3 manage.py migrate
+    python3 manage.py loaddata tests/fixtures.json
+    ```
+
+    ```shell
+    python3 manage.py runserver
+    ```
+
+    > Django admin credentials: `admin` / `admin`
 
 #### Pre-Commit Hooks
-We use [`pre-commit`](https://pre-commit.com/) hooks to simplify linting 
-and ensure consistent formatting among contributors. Use of `pre-commit` 
+
+We use [`pre-commit`](https://pre-commit.com/) hooks to simplify linting
+and ensure consistent formatting among contributors. Use of `pre-commit`
 is not a requirement, but is highly recommended.
 
 ```shell
@@ -33,25 +46,19 @@ pip install pre-commit
 pre-commit install
 ```
 
-Commiting will now automatically run the local hooks and ensure that 
+Commiting will now automatically run the local hooks and ensure that
 your commit passes all lint checks.
 
 ## Testing
-Run Django server:
-```shell
-cd ./tests
-python3 manage.py migrate
-python3 manage.py createsuperuser
-python3 manage.py runserver
-```
 
 Put some tasks into queue:
+
 ```python
 import random
 import django_rq
 from time import sleep
 
-queue = django_rq.get_queue()
+queue = django_rq.get_queue("paper:default")
 for _ in range(30):
    queue.enqueue(sleep, random.randint(5, 30))
 ```
