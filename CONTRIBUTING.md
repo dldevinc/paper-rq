@@ -62,3 +62,8 @@ queue = django_rq.get_queue("paper:default")
 for _ in range(30):
    queue.enqueue(sleep, random.randint(5, 30))
 ```
+
+Run the RQ queue:
+```shell
+python3 manage.py rqworker
+```
