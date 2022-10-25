@@ -64,6 +64,7 @@ for _ in range(30):
 ```
 
 Run the RQ queue:
+
 ```shell
 python3 manage.py rqworker
 ```
