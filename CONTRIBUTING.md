@@ -11,11 +11,11 @@
 1. Create a virtualenv
     ```shell
     cd paper-rq
-    virtualenv env
+    virtualenv .venv
     ```
 1. Activate virtualenv
     ```shell
-    source env/bin/activate
+    source .venv/bin/activate
     ```
 1. Install dependencies as well as a local editable copy of the library
     ```shell
@@ -64,6 +64,7 @@ for _ in range(30):
 ```
 
 Run the RQ queue:
+
 ```shell
 python3 manage.py rqworker
 ```
