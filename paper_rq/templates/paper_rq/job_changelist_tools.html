@@ -4,13 +4,13 @@
 
 {% block tools %}
   {% if not result.obj.invalid %}
-    <a href="{% url cl.opts|admin_urlname:'stop' result.obj.pk %}" class="btn btn-square btn-sm btn-square--danger"
+    <a href="{% url cl.opts|admin_urlname:'stop' result.obj.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-square btn-sm btn-square--danger"
        data-toggle="tooltip" data-placement="top" data-trigger="hover"
        data-html="true" title="{{ _("Stop job") }}">
       <i class="fa fa-stop"></i>
     </a>
 
-    <a href="{% url cl.opts|admin_urlname:'requeue' result.obj.pk %}" class="btn btn-square btn-sm btn-square--info"
+    <a href="{% url cl.opts|admin_urlname:'requeue' result.obj.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-square btn-sm btn-square--info"
        data-toggle="tooltip" data-placement="top" data-trigger="hover"
        data-html="true" title="{{ _("Requeue job") }}">
       <i class="fa fa-repeat"></i>

@@ -11,7 +11,6 @@ from django.utils import formats, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from paper_admin.admin.filters import SimpleListFilter
-from rq.command import send_stop_job_command
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
@@ -409,17 +408,9 @@ def stop_job_action(modeladmin, request, queryset):
     count = 0
     for job_model in queryset:
         job = job_model.job
-        if job is None:
-            continue
-
-        if job_model.status is JobStatus.STARTED:
-            send_stop_job_command(job.connection, job.id)
-        elif job_model.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
-            continue
-        else:
-            job.cancel()
-
-        count += 1
+        if job is not None:
+            if helpers.stop_job(job):
+                count += 1
 
     messages.success(request, _("Successfully stopped %(count)d %(items)s.") % {
         "count": count,
@@ -533,25 +524,15 @@ class JobModelAdmin(RedisModelAdminBase):
         if not self.has_manage_permission(request, obj):
             raise PermissionDenied
 
-        job = obj.job
+        helpers.stop_job(obj.job)
 
-        if obj.status is JobStatus.STARTED:
-            send_stop_job_command(job.connection, job.id)
-        elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
-            pass
-        elif obj.status is JobStatus.SCHEDULED:
-            scheduler = helpers.get_job_scheduler(job)
-            if scheduler:
-                scheduler.cancel(job)
-                job.cancel()
-        else:
-            job.cancel()
-
-        post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
+        post_url = request.GET.get("next")
+        post_url = post_url or reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
     def delete_view(self, request, object_id, extra_context=None):
         opts = self.model._meta
+        info = opts.app_label, opts.model_name
 
         obj = self.get_object(request, unquote(object_id))
         if obj is None:
@@ -562,14 +543,7 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            with job.connection.pipeline() as pipe:
-                if job.is_stopped:
-                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
-                    # не удаляет задачу из реестра.
-                    job.failed_job_registry.remove(job, pipeline=pipe)
-
-                job.delete(pipeline=pipe)
-                pipe.execute()
+            job.delete()
 
             self.message_user(
                 request,
@@ -580,22 +554,15 @@ class JobModelAdmin(RedisModelAdminBase):
                 messages.SUCCESS,
             )
 
-        info = self.model._meta.app_label, self.model._meta.model_name
-        post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
+        post_url = request.GET.get("next")
+        post_url = post_url or reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
     def delete_queryset(self, request, queryset):
         for job_model in queryset:
             job = job_model.job
             if job:
-                with job.connection.pipeline() as pipe:
-                    # Возможно баг RQ: удаление задачи в статусе JobStatus.STOPPED
-                    # не удаляет задачу из реестра.
-                    if job.is_stopped:
-                        job.failed_job_registry.remove(job, pipeline=pipe)
-
-                    job.delete(pipeline=pipe)
-                    pipe.execute()
+                job.delete()
 
     def status(self, obj):
         if obj.job:

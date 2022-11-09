@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.6.0](https://github.com/dldevinc/paper-rq/tree/v0.6.0) - 2022-11-09
+
+### Features
+
+-   Added new `helpers.stop_job()` function.
+-   Added correct redirect after stopping and requeuing the job.
+
+### Bug Fixes
+
+-   `rq>=1.11` fixes an issue related to deleting a stopped job from 
+    the `FailedJobRegistry`.
+
 ## [0.5.8](https://github.com/dldevinc/paper-rq/tree/v0.5.8) - 2022-10-18
 
 ### Features

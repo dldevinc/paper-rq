@@ -1,6 +1,7 @@
 from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
+from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
 from rq.utils import utcnow
@@ -177,8 +178,9 @@ def requeue_job(job: Job):
     в ближайшее время.
     """
     queue = get_queue(job.origin)
+    status = JobStatus(job.get_status())
 
-    if job.is_failed or job.is_finished or job.is_canceled or job.is_stopped:
+    if status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
         with queue.connection.pipeline() as pipe:
             job.created_at = utcnow()
             job.meta = {"original_job": job.id}
@@ -188,8 +190,30 @@ def requeue_job(job: Job):
             pipe.hdel(new_job.key, "exc_info")
             pipe.execute()
             return new_job
-    elif job.is_scheduled and RQ_SHEDULER_SUPPORTED:
+    elif status is JobStatus.SCHEDULED:
         scheduler = get_job_scheduler(job)
-        scheduler.enqueue_job(job)
+        if scheduler:
+            scheduler.enqueue_job(job)
 
     return job
+
+
+def stop_job(job: Job) -> bool:
+    """
+    Остановка / отмена выполнения задачи.
+    """
+    status = JobStatus(job.get_status())
+    if status is JobStatus.STARTED:
+        send_stop_job_command(job.connection, job.id)
+    elif status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
+        # already stopped / cancelled / finished
+        return False
+    elif status is JobStatus.SCHEDULED:
+        scheduler = get_job_scheduler(job)
+        if scheduler:
+            scheduler.cancel(job)
+            job.cancel()
+    else:
+        job.cancel()
+
+    return True
