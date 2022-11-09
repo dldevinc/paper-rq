@@ -526,11 +526,13 @@ class JobModelAdmin(RedisModelAdminBase):
 
         helpers.stop_job(obj.job)
 
-        post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
+        post_url = request.GET.get("next")
+        post_url = post_url or reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
     def delete_view(self, request, object_id, extra_context=None):
         opts = self.model._meta
+        info = opts.app_label, opts.model_name
 
         obj = self.get_object(request, unquote(object_id))
         if obj is None:
@@ -552,8 +554,8 @@ class JobModelAdmin(RedisModelAdminBase):
                 messages.SUCCESS,
             )
 
-        info = self.model._meta.app_label, self.model._meta.model_name
-        post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
+        post_url = request.GET.get("next")
+        post_url = post_url or reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
     def delete_queryset(self, request, queryset):
