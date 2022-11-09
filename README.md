@@ -2,6 +2,8 @@
 
 An administrative interface for managing RQ tasks in Paper Admin.
 
+⚠ Default `rq.scheduler` is not supported! Use [rq-scheduler](https://github.com/rq/rq-scheduler) instead.
+
 [![PyPI](https://img.shields.io/pypi/v/paper-rq.svg)](https://pypi.org/project/paper-rq/)
 [![Build Status](https://github.com/dldevinc/paper-admin/actions/workflows/release.yml/badge.svg)](https://github.com/dldevinc/paper-rq)
 [![Software license](https://img.shields.io/pypi/l/paper-rq.svg)](https://pypi.org/project/paper-rq/)
