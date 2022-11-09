@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.5.9](https://github.com/dldevinc/paper-rq/tree/v0.5.9) - 2022-11-09
+
+### Bug Fixes
+
+-   `rq>=1.11` fixed an issue related to deleting a stopped job from 
+    the `FailedJobRegistry`.
+
+### Features
+
+-   Added new `helpers.stop_job()` function.
+
 ## [0.5.8](https://github.com/dldevinc/paper-rq/tree/v0.5.8) - 2022-10-18
 
 ### Features

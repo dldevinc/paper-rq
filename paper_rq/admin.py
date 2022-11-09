@@ -11,7 +11,6 @@ from django.utils import formats, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from paper_admin.admin.filters import SimpleListFilter
-from rq.command import send_stop_job_command
 from rq.job import JobStatus
 from rq.queue import Queue
 from rq.registry import (
@@ -409,17 +408,9 @@ def stop_job_action(modeladmin, request, queryset):
     count = 0
     for job_model in queryset:
         job = job_model.job
-        if job is None:
-            continue
-
-        if job_model.status is JobStatus.STARTED:
-            send_stop_job_command(job.connection, job.id)
-        elif job_model.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
-            continue
-        else:
-            job.cancel()
-
-        count += 1
+        if job is not None:
+            if helpers.stop_job(job):
+                count += 1
 
     messages.success(request, _("Successfully stopped %(count)d %(items)s.") % {
         "count": count,
@@ -533,19 +524,7 @@ class JobModelAdmin(RedisModelAdminBase):
         if not self.has_manage_permission(request, obj):
             raise PermissionDenied
 
-        job = obj.job
-
-        if obj.status is JobStatus.STARTED:
-            send_stop_job_command(job.connection, job.id)
-        elif obj.status in {JobStatus.STOPPED, JobStatus.CANCELED, JobStatus.FAILED, JobStatus.FINISHED}:
-            pass
-        elif obj.status is JobStatus.SCHEDULED:
-            scheduler = helpers.get_job_scheduler(job)
-            if scheduler:
-                scheduler.cancel(job)
-                job.cancel()
-        else:
-            job.cancel()
+        helpers.stop_job(obj.job)
 
         post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
