@@ -25,6 +25,7 @@ from rq.registry import (
 from rq.worker_registration import clean_worker_registry
 
 from . import helpers
+from .exceptions import UnsupportedJobStatusError
 from .list_queryset import ListQuerySet
 from .models import JobModel, QueueModel, WorkerModel
 
@@ -138,9 +139,9 @@ class QueueModelAdmin(RedisModelAdminBase):
 
             self.message_user(
                 request,
-                _('The %(name)s “%(obj)s” was cleared successfully.') % {
-                    'name': opts.verbose_name,
-                    'obj': str(obj),
+                _("The %(name)s “%(obj)s” was cleared successfully.") % {
+                    "name": opts.verbose_name,
+                    "obj": str(obj),
                 },
                 messages.SUCCESS,
             )
@@ -409,7 +410,11 @@ def stop_job_action(modeladmin, request, queryset):
     for job_model in queryset:
         job = job_model.job
         if job is not None:
-            if helpers.stop_job(job):
+            try:
+                helpers.stop_job(job)
+            except UnsupportedJobStatusError:
+                pass
+            else:
                 count += 1
 
     messages.success(request, _("Successfully stopped %(count)d %(items)s.") % {
@@ -524,7 +529,18 @@ class JobModelAdmin(RedisModelAdminBase):
         if not self.has_manage_permission(request, obj):
             raise PermissionDenied
 
-        helpers.stop_job(obj.job)
+        try:
+            helpers.stop_job(obj.job)
+        except UnsupportedJobStatusError as exc:
+            self.message_user(
+                request,
+                _("The %(name)s “%(obj)s” has status “%(status)s” and cannot be stopped.") % {
+                    "name": opts.verbose_name,
+                    "obj": str(obj),
+                    "status": exc.status
+                },
+                messages.WARNING,
+            )
 
         post_url = request.GET.get("next")
         post_url = post_url or reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
@@ -547,9 +563,9 @@ class JobModelAdmin(RedisModelAdminBase):
 
             self.message_user(
                 request,
-                _('The %(name)s “%(obj)s” was deleted successfully.') % {
-                    'name': opts.verbose_name,
-                    'obj': str(obj),
+                _("The %(name)s “%(obj)s” was deleted successfully.") % {
+                    "name": opts.verbose_name,
+                    "obj": str(obj),
                 },
                 messages.SUCCESS,
             )

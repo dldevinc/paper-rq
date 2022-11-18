@@ -7,6 +7,8 @@ from rq.job import Job, JobStatus
 from rq.utils import utcnow
 from rq.worker import Worker
 
+from .exceptions import UnsupportedJobStatusError
+
 try:
     import rq_scheduler  # noqa
     RQ_SHEDULER_SUPPORTED = True
@@ -198,7 +200,7 @@ def requeue_job(job: Job):
     return job
 
 
-def stop_job(job: Job) -> bool:
+def stop_job(job: Job):
     """
     Остановка / отмена выполнения задачи.
     """
@@ -207,7 +209,10 @@ def stop_job(job: Job) -> bool:
         send_stop_job_command(job.connection, job.id)
     elif status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
         # already stopped / cancelled / finished
-        return False
+        raise UnsupportedJobStatusError(
+            job_id=job.id,
+            status=status.value
+        )
     elif status is JobStatus.SCHEDULED:
         scheduler = get_job_scheduler(job)
         if scheduler:
@@ -215,5 +220,3 @@ def stop_job(job: Job) -> bool:
             job.cancel()
     else:
         job.cancel()
-
-    return True
