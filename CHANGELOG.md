@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.6.1](https://github.com/dldevinc/paper-rq/tree/v0.6.1) - 2022-11-18
+
+### Features
+
+-   The `helpers.stop_job()` function now shows a message for unstoppable jobs.
+
 ## [0.6.0](https://github.com/dldevinc/paper-rq/tree/v0.6.0) - 2022-11-09
 
 ### Features
