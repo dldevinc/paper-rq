@@ -4,6 +4,7 @@
 
 ### Features
 
+-   Added `job` decorator.
 -   Added `started_at` field to admin interface.
 
 ## [0.6.1](https://github.com/dldevinc/paper-rq/tree/v0.6.1) - 2022-11-18

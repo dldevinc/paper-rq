@@ -48,6 +48,33 @@ PAPER_MENU = [
 
 [![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
 
+## `job` decorator
+
+The same as RQ's job decorator, but it automatically works out
+the `connection` argument from RQ_QUEUES.
+
+If `RQ.DEFAULT_RESULT_TTL` setting is set, it is used as default
+for `result_ttl` kwarg.
+
+If `RQ.DEFAULT_FAILURE_TTL` setting is set, it is used as default
+for `failure_ttl` kwarg.
+
+Example:
+```python
+import time
+
+from paper_rq.decorators import job
+
+
+@job("paper:default")
+def sleep(delay):
+    time.sleep(delay)
+```
+
+```python
+sleep.delay(5)
+```
+
 ## RQ Scheduler
 
 First you need to make sure you have the `rq-scheduler` library installed:
@@ -63,6 +90,8 @@ If you need to run multiple isolated schedulers, you can use the class
 # settings.py
 
 RQ = {
+    "DEFAULT_RESULT_TTL": "7d",
+    "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
     "SCHEDULER_LOCK_KEY": "rq:scheduler-1:scheduler_lock",
     "SCHEDULER_JOBS_KEY": "rq:scheduler-1:scheduled_jobs",

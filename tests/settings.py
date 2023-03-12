@@ -122,6 +122,8 @@ FILE_UPLOAD_PERMISSIONS = 0o666
 
 # RQ
 RQ = {
+    "DEFAULT_RESULT_TTL": "7d",
+    "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
     "SCHEDULER_LOCK_KEY": "rq:scheduler:paper:scheduler_lock",
     "SCHEDULER_JOBS_KEY": "rq:scheduler:paper:scheduled_jobs",
