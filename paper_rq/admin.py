@@ -431,7 +431,7 @@ class JobModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "id", "description", "queue", "dependency", "original", "timeout", "ttl", "status",
+                "id", "description", "queue", "dependency", "timeout", "ttl", "status",
             )
         }),
         (_("Callable"), {
@@ -629,20 +629,6 @@ class JobModelAdmin(RedisModelAdminBase):
 
         return self.get_empty_value_display()
     dependency.short_description = _("Depends On")
-
-    def original(self, obj):
-        if obj.job:
-            orig_job_id = obj.job.meta.get("original_job")
-            if orig_job_id:
-                info = JobModel._meta.app_label, JobModel._meta.model_name
-                return format_html(
-                    '<a href="{url}">{job}</a>',
-                    url=reverse("admin:%s_%s_change" % info, args=(orig_job_id,)),
-                    job=orig_job_id
-                )
-
-        return self.get_empty_value_display()
-    original.short_description = _("Requeued From")
 
     def ttl(self, obj):
         if obj.job:
