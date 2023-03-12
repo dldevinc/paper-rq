@@ -43,9 +43,6 @@ def get_all_workers():
 def get_scheduled_jobs():
     """
     Получение задач из rq-scheduler.
-
-    Удаляет запланированные задачи из finished_job_registry и failed_job_registry
-    чтобы избежать повторения задачи в интерфейсе администратора.
     """
     if not RQ_SHEDULER_SUPPORTED:
         return
@@ -56,25 +53,21 @@ def get_scheduled_jobs():
             if job.origin != queue.name:
                 continue
 
-            with queue.connection.pipeline() as pipe:
-                if job in queue.finished_job_registry:
-                    queue.finished_job_registry.remove(job, pipeline=pipe)
-
-                if job in queue.failed_job_registry:
-                    queue.failed_job_registry.remove(job, pipeline=pipe)
-
-                # Повторяющиеся задачи после первого выполнения получают
-                # статус FINISHED. Это может ввести в заблуждение пользователя
-                # в интерфейсе администратора.
-                if job.get_status(refresh=False) != JobStatus.SCHEDULED:
-                    job.set_status(JobStatus.SCHEDULED, pipeline=pipe)
-
-                pipe.execute()
+            # Избавляемся от дублирования задачи в админке
+            if (
+                (job in queue.started_job_registry) or
+                (job in queue.finished_job_registry) or
+                (job in queue.failed_job_registry)
+            ):
+                continue
 
             yield job
 
 
 def get_all_jobs():
+    """
+    Возвращает все задачи из всех реестров, а также из планировщика задач.
+    """
     yield from get_scheduled_jobs()
 
     for queue in get_all_queues():
