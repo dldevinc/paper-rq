@@ -4,7 +4,7 @@ from django_rq.settings import QUEUES_LIST
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
-from rq.utils import utcnow
+from rq.utils import get_version, utcnow
 from rq.worker import Worker
 
 from .exceptions import UnsupportedJobStatusError
@@ -14,6 +14,10 @@ try:
     RQ_SHEDULER_SUPPORTED = True
 except ImportError:
     RQ_SHEDULER_SUPPORTED = False
+
+
+def supports_redis_streams(connection):
+    return get_version(connection) >= (5, 0, 0)
 
 
 def hashable_dict(dict_value):
@@ -161,30 +165,30 @@ def requeue_job(job: Job):
     """
     Повторный запуск задачи.
 
-    Для задач в статусе failed, finished, canceled и stopped создаётся новая
-    задача, с новым ID и очищенными полями result и exc_info. Это сделано
-    для удобства логирования. ID исходной задачи сохраняется в meta["original_job"].
-
-    Отложенная задача (со статусом scheduled) перемещается в текущую
-    очередь на выполнение.
-
-    (!) Если запланированная (scheduled) задача была отменена (canceled),
-    этот метод создаст новую *одноразовую* задачу, которая будет выполнена
-    в ближайшее время.
+    Перезапустить можно только ту задачу, которая имеет статус `failed`, `finished`,
+    `canceled`, `stopped` или `scheduled`.
     """
     queue = get_queue(job.origin)
     status = JobStatus(job.get_status())
 
     if status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
         with queue.connection.pipeline() as pipe:
-            job.created_at = utcnow()
-            job.meta = {"original_job": job.id}
-            job._id = None
-            new_job = queue.enqueue_job(job)
-            pipe.hdel(new_job.key, "result")
-            pipe.hdel(new_job.key, "exc_info")
-            pipe.execute()
-            return new_job
+            if supports_redis_streams(queue.connection):
+                job._remove_from_registries(pipeline=pipe)
+                job.started_at = None
+                job.ended_at = None
+                job.last_heartbeat = None
+                queue.enqueue_job(job, pipeline=pipe)
+                pipe.execute()
+            else:
+                job.created_at = utcnow()
+                job.meta = {"original_job": job.id}
+                job._id = None
+                new_job = queue.enqueue_job(job)
+                pipe.hdel(new_job.key, "result")
+                pipe.hdel(new_job.key, "exc_info")
+                pipe.execute()
+                return new_job
     elif status is JobStatus.SCHEDULED:
         scheduler = get_job_scheduler(job)
         if scheduler:

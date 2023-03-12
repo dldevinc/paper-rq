@@ -1,9 +1,10 @@
 # Change Log
 
-## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-03-12
+## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-03-13
 
 ### Features
 
+-   Added support for `rq` >= 1.12.0.
 -   Added `job` decorator.
 -   Added `started_at` field to admin interface.
 

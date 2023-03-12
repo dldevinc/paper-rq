@@ -559,7 +559,13 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            job.delete()
+            if helpers.supports_redis_streams(job.connection):
+                with job.connection.pipeline() as pipe:
+                    pipe.delete(Result.get_key(job.id))
+                    job.delete(pipeline=pipe)
+                    pipe.execute()
+            else:
+                job.delete()
 
             self.message_user(
                 request,
