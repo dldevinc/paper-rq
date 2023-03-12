@@ -170,6 +170,7 @@ class JobModel(models.Model):
     meta = models.TextField(_("meta"))
     created_at = models.DateTimeField(_("created at"))
     enqueued_at = models.DateTimeField(_("enqueued at"), null=True)
+    started_at = models.DateTimeField(_("started at"), null=True)
     ended_at = models.DateTimeField(_("ended at"), null=True)
 
     # флаг, устанавливаемый при ошибках десериализации задач
@@ -208,6 +209,7 @@ class JobModel(models.Model):
             meta=job.meta,
             created_at=job.created_at,
             enqueued_at=job.enqueued_at,
+            started_at=job.started_at,
             ended_at=job.ended_at,
             invalid=invalid
         )

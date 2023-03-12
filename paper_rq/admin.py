@@ -441,7 +441,7 @@ class JobModelAdmin(RedisModelAdminBase):
         }),
         (_("Important Dates"), {
             "fields": (
-                "created_at", "scheduled_on", "enqueued_at", "ended_at"
+                "created_at", "scheduled_on", "enqueued_at", "started_at", "ended_at"
             )
         }),
     )
