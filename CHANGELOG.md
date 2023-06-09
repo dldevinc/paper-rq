@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.8.0](https://github.com/dldevinc/paper-rq/tree/v0.8.0) - 2023-06-10
+
+### Features
+
+-   Added support for Python 3.11.
+-   Added support for Django 4.2.
+-   Droped support for Django 2.2, 3.0, 3.1.
+-   Droped support for Python 3.6.
+
 ## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-03-13
 
 ### Features

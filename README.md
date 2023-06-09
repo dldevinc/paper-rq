@@ -10,9 +10,9 @@ An administrative interface for managing RQ tasks in Paper Admin.
 
 ## Compatibility
 
--   [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 3.0
+-   [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 6.0
 -   [`django-rq`](https://github.com/rq/django-rq) >= 2.4
--   `python` >= 3.6
+-   `python` >= 3.7
 
 ## Installation
 
