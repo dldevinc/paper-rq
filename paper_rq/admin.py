@@ -22,6 +22,7 @@ from rq.registry import (
     StartedJobRegistry,
     clean_registries,
 )
+from rq.results import Result
 from rq.worker_registration import clean_worker_registry
 
 from . import helpers
@@ -436,7 +437,12 @@ class JobModelAdmin(RedisModelAdminBase):
         }),
         (_("Callable"), {
             "fields": (
-                "callable_display", "result_display", "exception_display", "meta_display",
+                "callable_display", "meta_display",
+            )
+        }),
+        (_("Result"), {
+            "fields": (
+                "result_display", "exception_display",
             )
         }),
         (_("Important Dates"), {
@@ -453,6 +459,13 @@ class JobModelAdmin(RedisModelAdminBase):
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
     list_display = ["id_display", "func_display", "queue", "status", "enqueued_at_display"]
+    tabs = [
+        ('general', _('General')),
+        ('results', _('Latest results')),
+    ]
+    form_includes = [
+        ("paper_rq/job_results.html", "top", "results"),
+    ]
 
     def get_urls(self):
         from django.urls import path

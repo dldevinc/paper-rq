@@ -34,11 +34,13 @@ INSTALLED_APPS = (
 Add `paper_rq` to your `PAPER_MENU`:
 
 ```python
+from paper_admin.menu import Item
+
 PAPER_MENU = [
     # ...
-    dict(
+    Item(
         app="paper_rq",
-        icon="fa fa-fw fa-lg fa-clock-o",
+        icon="bi-clock-history",
     ),
     # ...
 ]
@@ -83,8 +85,9 @@ First you need to make sure you have the `rq-scheduler` library installed:
 pip install rq-scheduler
 ```
 
-If you need to run multiple isolated schedulers, you can use the class
-`paper_rq.scheduler.Scheduler`. It reads the Redis keys from the `RQ` setting:
+If you need to run multiple isolated schedulers on the same server, you should 
+use the class `paper_rq.scheduler.Scheduler`. It reads the Redis keys from 
+the `RQ` setting:
 
 ```python
 # settings.py

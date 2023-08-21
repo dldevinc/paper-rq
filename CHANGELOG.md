@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.8.0](https://github.com/dldevinc/paper-rq/tree/v0.8.0) - 2023-06-10
+## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-08-21
 
 ### Features
 
@@ -8,11 +8,6 @@
 -   Added support for Django 4.2.
 -   Droped support for Django 2.2, 3.0, 3.1.
 -   Droped support for Python 3.6.
-
-## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-03-13
-
-### Features
-
 -   Added support for `rq` >= 1.12.0.
 -   Added `job` decorator.
 -   Added `started_at` field to admin interface.
