@@ -4,7 +4,7 @@ from datetime import timedelta
 import django_rq
 from django.core.management.base import BaseCommand
 from rq import get_current_job
-from ...tasks import sleep
+from ...jobs import sleep
 
 
 def generate_random_number():

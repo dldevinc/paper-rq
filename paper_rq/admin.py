@@ -22,6 +22,7 @@ from rq.registry import (
     StartedJobRegistry,
     clean_registries,
 )
+from rq.results import Result
 from rq.worker_registration import clean_worker_registry
 
 from . import helpers
@@ -431,17 +432,22 @@ class JobModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "id", "description", "queue", "dependency", "original", "timeout", "ttl", "status",
+                "id", "description", "queue", "dependency", "timeout", "ttl", "status",
             )
         }),
         (_("Callable"), {
             "fields": (
-                "callable_display", "result_display", "exception_display", "meta_display",
+                "callable_display", "meta_display",
+            )
+        }),
+        (_("Result"), {
+            "fields": (
+                "result_display", "exception_display",
             )
         }),
         (_("Important Dates"), {
             "fields": (
-                "created_at", "scheduled_on", "enqueued_at", "ended_at"
+                "created_at", "scheduled_on", "enqueued_at", "started_at", "ended_at"
             )
         }),
     )
@@ -453,6 +459,13 @@ class JobModelAdmin(RedisModelAdminBase):
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
     list_display = ["id_display", "func_display", "queue", "status", "enqueued_at_display"]
+    tabs = [
+        ('general', _('General')),
+        ('results', _('Latest results')),
+    ]
+    form_includes = [
+        ("paper_rq/job_results.html", "top", "results"),
+    ]
 
     def get_urls(self):
         from django.urls import path
@@ -559,7 +572,13 @@ class JobModelAdmin(RedisModelAdminBase):
 
         job = obj.job
         if job:
-            job.delete()
+            if helpers.supports_redis_streams(job.connection):
+                with job.connection.pipeline() as pipe:
+                    pipe.delete(Result.get_key(job.id))
+                    job.delete(pipeline=pipe)
+                    pipe.execute()
+            else:
+                job.delete()
 
             self.message_user(
                 request,
@@ -629,20 +648,6 @@ class JobModelAdmin(RedisModelAdminBase):
 
         return self.get_empty_value_display()
     dependency.short_description = _("Depends On")
-
-    def original(self, obj):
-        if obj.job:
-            orig_job_id = obj.job.meta.get("original_job")
-            if orig_job_id:
-                info = JobModel._meta.app_label, JobModel._meta.model_name
-                return format_html(
-                    '<a href="{url}">{job}</a>',
-                    url=reverse("admin:%s_%s_change" % info, args=(orig_job_id,)),
-                    job=orig_job_id
-                )
-
-        return self.get_empty_value_display()
-    original.short_description = _("Requeued From")
 
     def ttl(self, obj):
         if obj.job:

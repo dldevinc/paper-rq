@@ -10,6 +10,7 @@ from django_rq.settings import QUEUES_LIST
 from rq.exceptions import DeserializationError
 from rq.job import Job, JobStatus
 from rq.queue import Queue
+from rq.results import Result
 from rq.worker import Worker
 
 from . import helpers
@@ -160,7 +161,7 @@ class JobManager(BaseManager):
 
 
 class JobModel(models.Model):
-    id = models.TextField(_("ID"), primary_key=True)
+    id = models.CharField(_("ID"), max_length=48, primary_key=True)
     queue = models.TextField(_("queue"))
     description = models.TextField(_("description"))
     timeout = models.TextField(_("timeout"))
@@ -170,6 +171,7 @@ class JobModel(models.Model):
     meta = models.TextField(_("meta"))
     created_at = models.DateTimeField(_("created at"))
     enqueued_at = models.DateTimeField(_("enqueued at"), null=True)
+    started_at = models.DateTimeField(_("started at"), null=True)
     ended_at = models.DateTimeField(_("ended at"), null=True)
 
     # флаг, устанавливаемый при ошибках десериализации задач
@@ -208,6 +210,7 @@ class JobModel(models.Model):
             meta=job.meta,
             created_at=job.created_at,
             enqueued_at=job.enqueued_at,
+            started_at=job.started_at,
             ended_at=job.ended_at,
             invalid=invalid
         )
@@ -223,3 +226,62 @@ class JobModel(models.Model):
     @property
     def enqueue_time(self):
         return self.enqueued_at or datetime.datetime(datetime.MINYEAR, 1, 1)
+
+    def latest_results(self):
+        """
+        Возвращает последние 20 результатов.
+        """
+        job_results_key = Result.get_key(self.job.id)
+        response = self.job.connection.xrevrange(job_results_key, '+', '-', count=20)
+        return [
+            ResultModel.from_result(
+                Result.restore(
+                    self.job.id,
+                    result_id.decode(),
+                    payload,
+                    connection=self.job.connection,
+                    serializer=self.job.serializer
+                )
+            )
+            for result_id, payload in response
+        ]
+
+
+class ResultModel(models.Model):
+    TYPE_CHOICES = (
+        (Result.Type.SUCCESSFUL, _("Successful")),
+        (Result.Type.FAILED, _("Failed")),
+        (Result.Type.STOPPED, _("Stopped")),
+    )
+    id = models.CharField(_("ID"), max_length=32, primary_key=True)
+    job_id = models.CharField(_("Job"), max_length=48)
+    type = models.SmallIntegerField(_("type"), choices=TYPE_CHOICES)
+    result = models.TextField(_("result"))
+    exception = models.TextField(_("exception"))
+    created_at = models.DateTimeField(_("created at"))
+
+    class Meta:
+        managed = False
+        verbose_name = _("result")
+        default_permissions = ()
+
+    def __str__(self):
+        return "Result(id={id}, type={type})".format(
+            id=self.id,
+            type=self.get_type_display()
+        )
+
+    @classmethod
+    def from_result(cls, result: Result):
+        return cls(
+            id=result.id,
+            job_id=result.job_id,
+            type=result.type,
+            result=result.return_value,
+            exception=result.exc_string,
+            created_at=result.created_at,
+        )
+
+    @cached_property
+    def job(self) -> Job:
+        return helpers.get_job(self.job_id)

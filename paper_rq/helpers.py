@@ -4,7 +4,7 @@ from django_rq.settings import QUEUES_LIST
 from rq.command import send_stop_job_command
 from rq.exceptions import NoSuchJobError
 from rq.job import Job, JobStatus
-from rq.utils import utcnow
+from rq.utils import get_version, utcnow
 from rq.worker import Worker
 
 from .exceptions import UnsupportedJobStatusError
@@ -14,6 +14,10 @@ try:
     RQ_SHEDULER_SUPPORTED = True
 except ImportError:
     RQ_SHEDULER_SUPPORTED = False
+
+
+def supports_redis_streams(connection):
+    return get_version(connection) >= (5, 0, 0)
 
 
 def hashable_dict(dict_value):
@@ -43,9 +47,6 @@ def get_all_workers():
 def get_scheduled_jobs():
     """
     Получение задач из rq-scheduler.
-
-    Удаляет запланированные задачи из finished_job_registry и failed_job_registry
-    чтобы избежать повторения задачи в интерфейсе администратора.
     """
     if not RQ_SHEDULER_SUPPORTED:
         return
@@ -56,25 +57,21 @@ def get_scheduled_jobs():
             if job.origin != queue.name:
                 continue
 
-            with queue.connection.pipeline() as pipe:
-                if job in queue.finished_job_registry:
-                    queue.finished_job_registry.remove(job, pipeline=pipe)
-
-                if job in queue.failed_job_registry:
-                    queue.failed_job_registry.remove(job, pipeline=pipe)
-
-                # Повторяющиеся задачи после первого выполнения получают
-                # статус FINISHED. Это может ввести в заблуждение пользователя
-                # в интерфейсе администратора.
-                if job.get_status(refresh=False) != JobStatus.SCHEDULED:
-                    job.set_status(JobStatus.SCHEDULED, pipeline=pipe)
-
-                pipe.execute()
+            # Избавляемся от дублирования задачи в админке
+            if (
+                (job in queue.started_job_registry) or
+                (job in queue.finished_job_registry) or
+                (job in queue.failed_job_registry)
+            ):
+                continue
 
             yield job
 
 
 def get_all_jobs():
+    """
+    Возвращает все задачи из всех реестров, а также из планировщика задач.
+    """
     yield from get_scheduled_jobs()
 
     for queue in get_all_queues():
@@ -168,30 +165,35 @@ def requeue_job(job: Job):
     """
     Повторный запуск задачи.
 
-    Для задач в статусе failed, finished, canceled и stopped создаётся новая
-    задача, с новым ID и очищенными полями result и exc_info. Это сделано
-    для удобства логирования. ID исходной задачи сохраняется в meta["original_job"].
-
-    Отложенная задача (со статусом scheduled) перемещается в текущую
-    очередь на выполнение.
-
-    (!) Если запланированная (scheduled) задача была отменена (canceled),
-    этот метод создаст новую *одноразовую* задачу, которая будет выполнена
-    в ближайшее время.
+    Перезапустить можно только ту задачу, которая имеет статус `failed`, `finished`,
+    `canceled`, `stopped` или `scheduled`.
     """
     queue = get_queue(job.origin)
     status = JobStatus(job.get_status())
 
     if status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
-        with queue.connection.pipeline() as pipe:
-            job.created_at = utcnow()
-            job.meta = {"original_job": job.id}
-            job._id = None
-            new_job = queue.enqueue_job(job)
-            pipe.hdel(new_job.key, "result")
-            pipe.hdel(new_job.key, "exc_info")
-            pipe.execute()
-            return new_job
+        if supports_redis_streams(queue.connection):
+            with queue.connection.pipeline() as pipe:
+                job._remove_from_registries(pipeline=pipe)
+                job.started_at = None
+                job.ended_at = None
+                job.last_heartbeat = None
+                pipe.execute()
+
+            # Нельзя включить в pipeline из-за ошибки, связанной с тем,
+            # что enqueue_job() вызывает pipeline.multi(), который фейлится
+            # из-за того, что в стеке уже есть команды.
+            queue.enqueue_job(job)
+        else:
+            with queue.connection.pipeline() as pipe:
+                job.created_at = utcnow()
+                job.meta = {"original_job": job.id}
+                job._id = None
+                new_job = queue.enqueue_job(job)
+                pipe.hdel(new_job.key, "result")
+                pipe.hdel(new_job.key, "exc_info")
+                pipe.execute()
+                return new_job
     elif status is JobStatus.SCHEDULED:
         scheduler = get_job_scheduler(job)
         if scheduler:
@@ -203,6 +205,8 @@ def requeue_job(job: Job):
 def stop_job(job: Job):
     """
     Остановка / отмена выполнения задачи.
+    Если задача повторяющаяся (repeat > 1), то вызов этой функции
+    отменит лишь текущий запуск, но не последующие.
     """
     status = JobStatus(job.get_status())
     if status is JobStatus.STARTED:

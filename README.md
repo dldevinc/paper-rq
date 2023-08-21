@@ -10,9 +10,9 @@ An administrative interface for managing RQ tasks in Paper Admin.
 
 ## Compatibility
 
--   [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 3.0
+-   [`paper-admin`](https://github.com/dldevinc/paper-admin) >= 6.0
 -   [`django-rq`](https://github.com/rq/django-rq) >= 2.4
--   `python` >= 3.6
+-   `python` >= 3.7
 
 ## Installation
 
@@ -34,11 +34,13 @@ INSTALLED_APPS = (
 Add `paper_rq` to your `PAPER_MENU`:
 
 ```python
+from paper_admin.menu import Item
+
 PAPER_MENU = [
     # ...
-    dict(
+    Item(
         app="paper_rq",
-        icon="fa fa-fw fa-lg fa-clock-o",
+        icon="bi-clock-history",
     ),
     # ...
 ]
@@ -48,6 +50,33 @@ PAPER_MENU = [
 
 [![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
 
+## `job` decorator
+
+The same as RQ's job decorator, but it automatically works out
+the `connection` argument from RQ_QUEUES.
+
+If `RQ.DEFAULT_RESULT_TTL` setting is set, it is used as default
+for `result_ttl` kwarg.
+
+If `RQ.DEFAULT_FAILURE_TTL` setting is set, it is used as default
+for `failure_ttl` kwarg.
+
+Example:
+```python
+import time
+
+from paper_rq.decorators import job
+
+
+@job("paper:default")
+def sleep(delay):
+    time.sleep(delay)
+```
+
+```python
+sleep.delay(5)
+```
+
 ## RQ Scheduler
 
 First you need to make sure you have the `rq-scheduler` library installed:
@@ -56,13 +85,16 @@ First you need to make sure you have the `rq-scheduler` library installed:
 pip install rq-scheduler
 ```
 
-If you need to run multiple isolated schedulers, you can use the class
-`paper_rq.scheduler.Scheduler`. It reads the Redis keys from the `RQ` setting:
+If you need to run multiple isolated schedulers on the same server, you should 
+use the class `paper_rq.scheduler.Scheduler`. It reads the Redis keys from 
+the `RQ` setting:
 
 ```python
 # settings.py
 
 RQ = {
+    "DEFAULT_RESULT_TTL": "7d",
+    "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
     "SCHEDULER_LOCK_KEY": "rq:scheduler-1:scheduler_lock",
     "SCHEDULER_JOBS_KEY": "rq:scheduler-1:scheduled_jobs",

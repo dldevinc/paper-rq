@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
+from paper_admin.menu import Item
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -104,6 +105,10 @@ USE_L10N = True
 
 USE_TZ = True
 
+FORMAT_MODULE_PATH = [
+    "tests.formats",
+]
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
@@ -118,6 +123,8 @@ FILE_UPLOAD_PERMISSIONS = 0o666
 
 # RQ
 RQ = {
+    "DEFAULT_RESULT_TTL": "7d",
+    "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",
     "SCHEDULER_LOCK_KEY": "rq:scheduler:paper:scheduler_lock",
     "SCHEDULER_JOBS_KEY": "rq:scheduler:paper:scheduled_jobs",
@@ -137,14 +144,14 @@ RQ_QUEUES = {
 #  Paper Admin
 # =============
 PAPER_MENU = [
-    dict(
+    Item(
         label=_("Dashboard"),
         url="admin:index",
-        icon="fa fa-fw fa-lg fa-area-chart",
+        icon="bi-speedometer2",
     ),
     dict(
         app="paper_rq",
-        icon="fa fa-fw fa-lg fa-clock-o",
+        icon="bi-clock-history",
     ),
     "-",
     "auth",

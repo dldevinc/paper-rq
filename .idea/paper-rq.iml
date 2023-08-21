@@ -21,7 +21,7 @@
       <excludeFolder url="file://$MODULE_DIR$/paper_rq.egg-info" />
       <excludeFolder url="file://$MODULE_DIR$/tests/static" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.10 (paper-rq)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7 (paper-rq)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

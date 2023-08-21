@@ -1,0 +1,45 @@
+{% for result in original.latest_results %}
+  <fieldset class="paper-card card{% if result.type.name == "SUCCESSFUL" %} paper-card--success{% endif %}{% if result.type.name == "FAILED" %} paper-card--danger{% endif %} mb-3">
+    <div class="card-header">
+      <h5 class="card-title mb-0">{{ result.created_at }}</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="paper-form__row paper-form__row--readonly field-id">
+        <div class="row">
+          <div class="col-md-3 col-xxl-2">
+            <label class="paper-form__label" for="{{ result.id }}-status">{{ _("Status") }}</label>
+          </div>
+          <div class="col-md-9 col-xxl-10">
+            <div class="readonly">{{ result.type.name|title }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="paper-form__row paper-form__row--readonly field-id">
+        <div class="row">
+          <div class="col-md-3 col-xxl-2">
+            <label class="paper-form__label" for="{{ result.id }}-result">{{ _("Result") }}</label>
+          </div>
+          <div class="col-md-9 col-xxl-10">
+            <div class="readonly">
+              <pre>{{ result.result|default:"-" }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="paper-form__row paper-form__row--readonly field-id">
+        <div class="row">
+          <div class="col-md-3 col-xxl-2">
+            <label class="paper-form__label" for="{{ result.id }}-exception">{{ _("Exception") }}</label>
+          </div>
+          <div class="col-md-9 col-xxl-10">
+            <div class="readonly">
+              <pre>{{ result.exception|default:"-" }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+{% endfor %}
