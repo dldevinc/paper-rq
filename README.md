@@ -52,14 +52,9 @@ PAPER_MENU = [
 
 ## `job` decorator
 
-The same as RQ's job decorator, but it automatically works out
-the `connection` argument from RQ_QUEUES.
-
-If `RQ.DEFAULT_RESULT_TTL` setting is set, it is used as default
-for `result_ttl` kwarg.
-
-If `RQ.DEFAULT_FAILURE_TTL` setting is set, it is used as default
-for `failure_ttl` kwarg.
+The same as RQ's `job` decorator, but it automatically works out
+the `connection` argument from RQ_QUEUES. It also respects the
+`RQ.DEFAULT_RESULT_TTL` and `RQ.DEFAULT_FAILURE_TTL` settings.
 
 Example:
 ```python
@@ -79,15 +74,15 @@ sleep.delay(5)
 
 ## RQ Scheduler
 
-First you need to make sure you have the `rq-scheduler` library installed:
+First, ensure that you have the `rq-scheduler` library installed:
 
 ```shell
 pip install rq-scheduler
 ```
 
-If you need to run multiple isolated schedulers on the same server, you should 
-use the class `paper_rq.scheduler.Scheduler`. It reads the Redis keys from 
-the `RQ` setting:
+If you need to run multiple isolated schedulers on the same server, you should
+use the class `paper_rq.scheduler.Scheduler`. This class reads the Redis keys 
+from the `RQ` settings:
 
 ```python
 # settings.py
