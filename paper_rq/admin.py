@@ -274,7 +274,6 @@ class WorkerModelAdmin(RedisModelAdminBase):
         }),
     )
     change_form_template = "paper_rq/worker_changeform.html"
-    changelist_tools = False
     object_history = False
     list_filter = [WorkerQueueFilter]
     list_display = ["name", "pid", "hostname", "state", "birth_date", "location", "db_index"]
