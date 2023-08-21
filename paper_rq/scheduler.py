@@ -3,6 +3,8 @@ from django.utils.functional import cached_property
 from rq.job import JobStatus
 from rq_scheduler.scheduler import Scheduler as DefaultScheduler
 
+from . import helpers
+
 
 class Scheduler(DefaultScheduler):
     """
@@ -50,3 +52,15 @@ class Scheduler(DefaultScheduler):
         if commit:
             job.save()
         return job
+
+    def enqueue_job(self, job):
+        # Исправление ситуации, когда повторяющаяся задача (repeat > 1)
+        # существует одновременно в нескольких реестрах.
+        queue = self.get_queue_for_job(job)
+        if helpers.supports_redis_streams(job.connection):
+            with queue.connection.pipeline() as pipe:
+                queue.canceled_job_registry.remove(job, pipeline=pipe)
+                queue.failed_job_registry.remove(job, pipeline=pipe)
+                queue.finished_job_registry.remove(job, pipeline=pipe)
+                pipe.execute()
+        return super().enqueue_job(job)

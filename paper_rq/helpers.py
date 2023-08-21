@@ -172,15 +172,20 @@ def requeue_job(job: Job):
     status = JobStatus(job.get_status())
 
     if status in {JobStatus.FAILED, JobStatus.FINISHED, JobStatus.CANCELED, JobStatus.STOPPED}:
-        with queue.connection.pipeline() as pipe:
-            if supports_redis_streams(queue.connection):
+        if supports_redis_streams(queue.connection):
+            with queue.connection.pipeline() as pipe:
                 job._remove_from_registries(pipeline=pipe)
                 job.started_at = None
                 job.ended_at = None
                 job.last_heartbeat = None
-                queue.enqueue_job(job, pipeline=pipe)
                 pipe.execute()
-            else:
+
+            # Нельзя включить в pipeline из-за ошибки, связанной с тем,
+            # что enqueue_job() вызывает pipeline.multi(), который фейлится
+            # из-за того, что в стеке уже есть команды.
+            queue.enqueue_job(job)
+        else:
+            with queue.connection.pipeline() as pipe:
                 job.created_at = utcnow()
                 job.meta = {"original_job": job.id}
                 job._id = None
@@ -200,6 +205,8 @@ def requeue_job(job: Job):
 def stop_job(job: Job):
     """
     Остановка / отмена выполнения задачи.
+    Если задача повторяющаяся (repeat > 1), то вызов этой функции
+    отменит лишь текущий запуск, но не последующие.
     """
     status = JobStatus(job.get_status())
     if status is JobStatus.STARTED:
