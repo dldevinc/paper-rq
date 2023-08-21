@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
+from paper_admin.menu import Item
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -143,14 +144,14 @@ RQ_QUEUES = {
 #  Paper Admin
 # =============
 PAPER_MENU = [
-    dict(
+    Item(
         label=_("Dashboard"),
         url="admin:index",
-        icon="fa fa-fw fa-lg fa-area-chart",
+        icon="bi-speedometer2",
     ),
     dict(
         app="paper_rq",
-        icon="fa fa-fw fa-lg fa-clock-o",
+        icon="bi-clock-history",
     ),
     "-",
     "auth",
