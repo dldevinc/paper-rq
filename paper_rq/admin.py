@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import formats, timezone
 from django.utils.html import format_html
+from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 from paper_admin.admin.filters import SimpleListFilter
 from rq.job import JobStatus
@@ -690,7 +691,7 @@ class JobModelAdmin(RedisModelAdminBase):
             if scheduler:
                 for job, scheduled_on in scheduler.get_jobs(with_times=True):
                     if job.origin == obj.job.origin and job.id == obj.id:
-                        return formats.localize(scheduled_on.astimezone(timezone.utc))
+                        return formats.localize(localtime(scheduled_on.replace(tzinfo=timezone.utc)))
 
         return self.get_empty_value_display()
     scheduled_on.short_description = _("Scheduled on")

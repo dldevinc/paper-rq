@@ -1,3 +1,5 @@
+import datetime
+
 from django_rq import get_queue, get_scheduler
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
@@ -14,6 +16,12 @@ try:
     RQ_SHEDULER_SUPPORTED = True
 except ImportError:
     RQ_SHEDULER_SUPPORTED = False
+
+
+def format_datetime(value):
+    if isinstance(value, datetime.datetime):
+        return value.replace(tzinfo=datetime.timezone.utc)
+    return value
 
 
 def supports_redis_streams(connection):

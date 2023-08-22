@@ -118,8 +118,8 @@ class WorkerModel(models.Model):
             pid=worker.pid,
             hostname=worker.hostname[:128],
             ip_address=worker.ip_address,
-            birth_date=worker.birth_date,
-            last_heartbeat=getattr(worker, "last_heartbeat", None)
+            birth_date=helpers.format_datetime(worker.birth_date),
+            last_heartbeat=helpers.format_datetime(getattr(worker, "last_heartbeat", None))
         )
 
     @cached_property
@@ -208,10 +208,10 @@ class JobModel(models.Model):
             result=job.result,
             exception=job.exc_info,
             meta=job.meta,
-            created_at=job.created_at,
-            enqueued_at=job.enqueued_at,
-            started_at=job.started_at,
-            ended_at=job.ended_at,
+            created_at=helpers.format_datetime(job.created_at),
+            enqueued_at=helpers.format_datetime(job.enqueued_at),
+            started_at=helpers.format_datetime(job.started_at),
+            ended_at=helpers.format_datetime(job.ended_at),
             invalid=invalid
         )
 
@@ -225,7 +225,10 @@ class JobModel(models.Model):
 
     @property
     def enqueue_time(self):
-        return self.enqueued_at or datetime.datetime(datetime.MINYEAR, 1, 1)
+        return (
+            self.enqueued_at
+            or helpers.format_datetime(datetime.datetime(datetime.MINYEAR, 1, 1))
+        )
 
     def latest_results(self):
         """
