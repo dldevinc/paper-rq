@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.7.1](https://github.com/dldevinc/paper-rq/tree/v0.7.1) - 2023-08-22
+
+### Bug Fixes
+
+-   Added missing migration file.
+
 ## [0.7.0](https://github.com/dldevinc/paper-rq/tree/v0.7.0) - 2023-08-21
 
 ### Features
