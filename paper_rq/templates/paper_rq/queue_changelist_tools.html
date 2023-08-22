@@ -5,9 +5,9 @@
 {% block tools %}
   {{ block.super }}
 
-  <a href="{% url cl.opts|admin_urlname:'clear' result.obj.pk %}" class="btn btn-square btn-sm btn-square--danger"
+  <a href="{% url cl.opts|admin_urlname:'clear' result.obj.pk %}"
+     class="btn btn-square btn-sm btn-square--danger bi-trash"
      data-toggle="tooltip" data-placement="top" data-trigger="hover"
      data-html="true" title="{{ _("Clear queue") }}">
-    <i class="fa fa-trash"></i>
   </a>
 {% endblock %}

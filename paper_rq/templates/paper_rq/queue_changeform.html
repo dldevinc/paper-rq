@@ -7,10 +7,10 @@
 
   <li class="nav-item d-lg-none">
     {% url url opts|admin_urlname:'clear' object_id|admin_urlquote as clear_url %}
-    <a href="{% add_preserved_filters clear_url %}" class="nav-link"
+    <a href="{% add_preserved_filters clear_url %}"
+       class="nav-link bi-trash text-danger"
        data-toggle="tooltip" data-placement="bottom" data-trigger="hover"
        data-html="true" title="{{ _("Clear queue") }}">
-      <i class="fa fa-refresh text-danger"></i>
     </a>
   </li>
 {% endblock %}
@@ -22,7 +22,7 @@
   <li>
     {% url opts|admin_urlname:'clear' object_id|admin_urlquote as clear_url %}
     <a href="{% add_preserved_filters clear_url %}" class="btn btn-block btn-danger">
-      <i class="fa fa-refresh"></i>
+      <i class="bi-trash"></i>
       <span>{{ _("Clear queue") }}</span>
     </a>
   </li>
