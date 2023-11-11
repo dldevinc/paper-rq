@@ -232,10 +232,10 @@ class JobModel(models.Model):
 
     def latest_results(self):
         """
-        Возвращает последние 20 результатов.
+        Возвращает последние 10 результатов.
         """
         job_results_key = Result.get_key(self.job.id)
-        response = self.job.connection.xrevrange(job_results_key, '+', '-', count=20)
+        response = self.job.connection.xrevrange(job_results_key, '+', '-', count=10)
         return [
             ResultModel.from_result(
                 Result.restore(
