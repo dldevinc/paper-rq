@@ -22,7 +22,7 @@
               <label class="paper-form__label" for="{{ result.id }}-stdout">{{ _("Stdout") }}</label>
             </div>
             <div class="col-md-9 col-xxl-10">
-              <div class="readonly" style="max-height: 250px; overflow-y: auto">
+              <div class="readonly pre-scrollable">
                 <pre style="white-space: pre-wrap">{{ result.stdout }}</pre>
               </div>
             </div>
@@ -36,7 +36,7 @@
             <label class="paper-form__label" for="{{ result.id }}-result">{{ _("Result") }}</label>
           </div>
           <div class="col-md-9 col-xxl-10">
-            <div class="readonly">
+            <div class="readonly pre-scrollable">
               <pre>{{ result.result|default:"-" }}</pre>
             </div>
           </div>
@@ -49,7 +49,7 @@
             <label class="paper-form__label" for="{{ result.id }}-exception">{{ _("Exception") }}</label>
           </div>
           <div class="col-md-9 col-xxl-10">
-            <div class="readonly">
+            <div class="readonly pre-scrollable">
               <pre>{{ result.exception|default:"-" }}</pre>
             </div>
           </div>
