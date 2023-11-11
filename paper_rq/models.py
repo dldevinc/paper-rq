@@ -259,6 +259,7 @@ class ResultModel(models.Model):
     id = models.CharField(_("ID"), max_length=32, primary_key=True)
     job_id = models.CharField(_("Job"), max_length=48)
     type = models.SmallIntegerField(_("type"), choices=TYPE_CHOICES)
+    stdout = models.TextField(_("stdout"))
     result = models.TextField(_("result"))
     exception = models.TextField(_("exception"))
     created_at = models.DateTimeField(_("created at"))
@@ -280,6 +281,7 @@ class ResultModel(models.Model):
             id=result.id,
             job_id=result.job_id,
             type=result.type,
+            stdout=getattr(result, "stdout", ""),
             result=result.return_value,
             exception=result.exc_string,
             created_at=result.created_at,

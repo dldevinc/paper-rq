@@ -4,7 +4,8 @@ from datetime import timedelta
 import django_rq
 from django.core.management.base import BaseCommand
 from rq import get_current_job
-from ...jobs import sleep
+
+from ...jobs import print_info, sleep
 
 
 def generate_random_number():
@@ -28,6 +29,9 @@ class Command(BaseCommand):
 
         for _ in range(3):
             self.low_queue.enqueue(sleep, 2)
+
+        for _ in range(2):
+            self.low_queue.enqueue(print_info)
 
     def create_deferred_tasks(self):
         for _ in range(5):
