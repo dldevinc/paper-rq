@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.1](https://github.com/dldevinc/paper-rq/tree/v0.8.1) - 2023-10-11
+
+### Bug Fixes
+
+-   The format of the `stdout` field has been updated.
+
 ## [0.8.0](https://github.com/dldevinc/paper-rq/tree/v0.8.0) - 2023-10-11
 
 ### Features
