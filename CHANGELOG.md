@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.0](https://github.com/dldevinc/paper-rq/tree/v0.8.0) - 2023-10-11
+
+### Features
+
+-   Added custom Job class to collect stdout messages.
+
 ## [0.7.3](https://github.com/dldevinc/paper-rq/tree/v0.7.3) - 2023-08-22
 
 ### Bug Fixes
