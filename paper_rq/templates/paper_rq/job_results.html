@@ -23,7 +23,7 @@
             </div>
             <div class="col-md-9 col-xxl-10">
               <div class="readonly" style="max-height: 250px; overflow-y: auto">
-                <code>{{ result.stdout|default:"-"|linebreaksbr }}</code>
+                <pre style="white-space: pre-wrap">{{ result.stdout }}</pre>
               </div>
             </div>
           </div>
