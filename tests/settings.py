@@ -123,6 +123,7 @@ FILE_UPLOAD_PERMISSIONS = 0o666
 
 # RQ
 RQ = {
+    "JOB_CLASS": "paper_rq.jobs.Job",
     "DEFAULT_RESULT_TTL": "7d",
     "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",

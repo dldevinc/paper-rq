@@ -46,6 +46,15 @@ PAPER_MENU = [
 ]
 ```
 
+Optionally, set `paper_rq.jobs.Job` as your job class:
+
+```python
+RQ = {
+    "JOB_CLASS": "paper_rq.jobs.Job",
+    # ...
+}
+```
+
 ## Result
 
 [![4d17958f25.png](https://i.postimg.cc/mgzCsHVG/4d17958f25.png)](https://postimg.cc/tsbYd7Lr)
@@ -88,6 +97,7 @@ from the `RQ` settings:
 # settings.py
 
 RQ = {
+    "JOB_CLASS": "paper_rq.jobs.Job",
     "DEFAULT_RESULT_TTL": "7d",
     "DEFAULT_FAILURE_TTL": "30d",
     "SCHEDULER_CLASS": "paper_rq.scheduler.Scheduler",

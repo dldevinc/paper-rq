@@ -232,10 +232,10 @@ class JobModel(models.Model):
 
     def latest_results(self):
         """
-        Возвращает последние 20 результатов.
+        Возвращает последние 10 результатов.
         """
         job_results_key = Result.get_key(self.job.id)
-        response = self.job.connection.xrevrange(job_results_key, '+', '-', count=20)
+        response = self.job.connection.xrevrange(job_results_key, '+', '-', count=10)
         return [
             ResultModel.from_result(
                 Result.restore(
@@ -259,6 +259,7 @@ class ResultModel(models.Model):
     id = models.CharField(_("ID"), max_length=32, primary_key=True)
     job_id = models.CharField(_("Job"), max_length=48)
     type = models.SmallIntegerField(_("type"), choices=TYPE_CHOICES)
+    stdout = models.TextField(_("stdout"))
     result = models.TextField(_("result"))
     exception = models.TextField(_("exception"))
     created_at = models.DateTimeField(_("created at"))
@@ -280,6 +281,7 @@ class ResultModel(models.Model):
             id=result.id,
             job_id=result.job_id,
             type=result.type,
+            stdout=getattr(result, "stdout", ""),
             result=result.return_value,
             exception=result.exc_string,
             created_at=result.created_at,

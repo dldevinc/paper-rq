@@ -6,3 +6,6 @@ class Config(AppConfig):
     name = "paper_rq"
     label = "paper_rq"
     verbose_name = _("Django RQ")
+
+    def ready(self):
+        from . import patches
