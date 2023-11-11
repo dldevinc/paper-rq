@@ -1,6 +1,7 @@
 import datetime
 
 from django_rq import get_queue, get_scheduler
+from django_rq.jobs import get_job_class
 from django_rq.queues import get_queue_by_index, get_redis_connection
 from django_rq.settings import QUEUES_LIST
 from rq.command import send_stop_job_command
@@ -104,13 +105,14 @@ def get_all_jobs():
                     yield job
 
 
-def get_job(job_id, job_class=Job):
+def get_job(job_id, job_class=None):
     """
     Получение задачи по ID.
 
     Может найти задачу, которая удалена из очереди (например, вследствие вывова
     метода `cancel()`).
     """
+    job_class = get_job_class(job_class)
     for connection in get_all_connections():
         try:
             return job_class.fetch(job_id, connection=connection)

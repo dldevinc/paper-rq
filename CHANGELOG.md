@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 -   The format of the `stdout` field has been updated.
+-   Fixed an issue with custom Job classes.
 
 ## [0.8.0](https://github.com/dldevinc/paper-rq/tree/v0.8.0) - 2023-10-11
 
