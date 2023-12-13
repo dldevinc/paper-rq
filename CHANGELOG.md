@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.2](https://github.com/dldevinc/paper-rq/tree/v0.8.2) - 2023-12-13
+
+### Bug Fixes
+
+-   Fixed job timeout for scheduled jobs.
+
 ## [0.8.1](https://github.com/dldevinc/paper-rq/tree/v0.8.1) - 2023-10-11
 
 ### Bug Fixes

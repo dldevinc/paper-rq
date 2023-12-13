@@ -13,6 +13,8 @@ class Scheduler(DefaultScheduler):
     Позволяет явно указать Redis-ключ для запланированных задач.
     Это может быть полезно в тех случаях, когда необходимо запускать
     несколько изолированных планировщиков на одном сервере.
+
+    Получает параметры для очередей как в django_rq.DjangoScheduler.
     """
 
     @cached_property
@@ -29,10 +31,20 @@ class Scheduler(DefaultScheduler):
                     result_ttl=None, ttl=None, id=None, status=JobStatus.SCHEDULED,
                     description=None, queue_name=None, timeout=None, meta=None,
                     depends_on=None, on_success=None, on_failure=None):
+        from django_rq.settings import QUEUES
+
         if args is None:
             args = ()
+
         if kwargs is None:
             kwargs = {}
+
+        if timeout is None:
+            queue_name = queue_name or self.queue_name
+            timeout = QUEUES[queue_name].get("DEFAULT_TIMEOUT")
+
+        if result_ttl is None:
+            result_ttl = getattr(settings, "RQ", {}).get("DEFAULT_RESULT_TTL")
 
         # Adds initial status
         job = self.job_class.create(
