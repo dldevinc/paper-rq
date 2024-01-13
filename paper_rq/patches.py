@@ -31,7 +31,7 @@ class PatchResult(Result, metaclass=MonkeyPatchMeta):
             job_id=job.id,
             type=cls.Type.FAILED,
             connection=job.connection,
-            stdout=getattr(job, "stdout", None),
+            stdout=getattr(job, "_stdout", None),
             exc_string=exc_string,
             serializer=job.serializer,
         )

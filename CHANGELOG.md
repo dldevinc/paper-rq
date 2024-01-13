@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.8.3](https://github.com/dldevinc/paper-rq/tree/v0.8.3) - 2024-01-13
+
+### Bug Fixes
+
+-   Fixed job's stdout logging.
+
 ## [0.8.2](https://github.com/dldevinc/paper-rq/tree/v0.8.2) - 2023-12-13
 
 ### Bug Fixes
