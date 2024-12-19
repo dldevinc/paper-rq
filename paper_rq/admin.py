@@ -1,15 +1,15 @@
-from datetime import timedelta, timezone
+import math
+from datetime import timedelta
 
 from django.contrib import admin, messages
 from django.contrib.admin.checks import ModelAdminChecks
-from django.contrib.admin.utils import model_ngettext, unquote
+from django.contrib.admin.utils import display_for_value, model_ngettext, unquote
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.contrib.staticfiles.storage import staticfiles_storage
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponseRedirect
 from django.urls import reverse
-from django.utils import formats, timezone
 from django.utils.html import format_html
-from django.utils.timezone import localtime
 from django.utils.translation import gettext_lazy as _
 from paper_admin.admin.filters import SimpleListFilter
 from rq.job import JobStatus
@@ -72,6 +72,9 @@ class RedisModelAdminBase(admin.ModelAdmin):
             return None
 
 
+@admin.display(
+    description=_("Clear selected queues")
+)
 def clear_queue_action(modeladmin, request, queryset):
     count = 0
     for queue_model in queryset:
@@ -85,20 +88,24 @@ def clear_queue_action(modeladmin, request, queryset):
     })
 
 
-clear_queue_action.short_description = _("Clear selected queues")
-
-
 @admin.register(QueueModel)
 class QueueModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "name",
+                "name", "view_workers",
+            )
+        }),
+        (_("Jobs"), {
+            "fields": (
+                "view_queued_jobs", "view_started_jobs", "view_deferred_jobs",
+                "view_scheduled_jobs", "view_finished_jobs", "view_failed_jobs",
+                "view_canceled_jobs",
             )
         }),
         (_("Server"), {
             "fields": (
-                "location", "db_index"
+                "view_location", "view_db_index"
             )
         }),
     )
@@ -107,9 +114,9 @@ class QueueModelAdmin(RedisModelAdminBase):
     object_history = False
     ordering = ["order"]
     actions = [clear_queue_action]
-    list_display = ["name", "queued_jobs", "started_jobs", "deferred_jobs",
-                    "scheduled_jobs", "finished_jobs", "failed_jobs", "canceled_jobs",
-                    "workers", "location", "db_index"]
+    list_display = ["name", "view_queued_jobs", "view_started_jobs", "view_deferred_jobs",
+                    "view_scheduled_jobs", "view_finished_jobs", "view_failed_jobs",
+                    "view_canceled_jobs", "view_workers", "view_location", "view_db_index"]
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -152,48 +159,123 @@ class QueueModelAdmin(RedisModelAdminBase):
         post_url = reverse("admin:%s_%s_changelist" % info, current_app=self.admin_site.name)
         return HttpResponseRedirect(post_url)
 
-    def queued_jobs(self, obj):
+    @admin.display(
+        description=_("Queued Jobs"),
+        ordering="queue.count"
+    )
+    def view_queued_jobs(self, obj):
         if obj.queue:
-            return obj.queue.count
-    queued_jobs.short_description = _("Queued Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.QUEUED.value,
+                count=obj.queue.count
+            )
+        return self.get_empty_value_display()
 
-    def started_jobs(self, obj):
+    @admin.display(
+        description=_("Active Jobs"),
+    )
+    def view_started_jobs(self, obj):
         if obj.queue:
             started_job_registry = StartedJobRegistry(obj.name, obj.queue.connection)
-            return len(started_job_registry)
-    started_jobs.short_description = _("Active Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.STARTED.value,
+                count=len(started_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def deferred_jobs(self, obj):
+    @admin.display(
+        description=_("Deferred Jobs"),
+    )
+    def view_deferred_jobs(self, obj):
         if obj.queue:
             deferred_job_registry = DeferredJobRegistry(obj.name, obj.queue.connection)
-            return len(deferred_job_registry)
-    deferred_jobs.short_description = _("Deferred Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.DEFERRED.value,
+                count=len(deferred_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def scheduled_jobs(self, obj):
+    @admin.display(
+        description=_("Scheduled Jobs"),
+    )
+    def view_scheduled_jobs(self, obj):
         if obj.queue:
             scheduled_job_registry = ScheduledJobRegistry(obj.name, obj.queue.connection)
-            return len(scheduled_job_registry)
-    scheduled_jobs.short_description = _("Scheduled Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.SCHEDULED.value,
+                count=len(scheduled_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def finished_jobs(self, obj):
+    @admin.display(
+        description=_("Finished Jobs"),
+    )
+    def view_finished_jobs(self, obj):
         if obj.queue:
             finished_job_registry = FinishedJobRegistry(obj.name, obj.queue.connection)
-            return len(finished_job_registry)
-    finished_jobs.short_description = _("Finished Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.FINISHED.value,
+                count=len(finished_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def failed_jobs(self, obj):
+    @admin.display(
+        description=_("Failed Jobs"),
+    )
+    def view_failed_jobs(self, obj):
         if obj.queue:
             failed_job_registry = FailedJobRegistry(obj.name, obj.queue.connection)
-            return len(failed_job_registry)
-    failed_jobs.short_description = _("Failed Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.FAILED.value,
+                count=len(failed_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def canceled_jobs(self, obj):
+    @admin.display(
+        description=_("Canceled Jobs"),
+    )
+    def view_canceled_jobs(self, obj):
         if obj.queue:
             canceled_job_registry = CanceledJobRegistry(obj.name, obj.queue.connection)
-            return len(canceled_job_registry)
-    canceled_jobs.short_description = _("Canceled Jobs")
+            info = JobModel._meta.app_label, JobModel._meta.model_name
+            return format_html(
+                '<a href="{url}?queue={queue}&status={status}">{count}</a>',
+                url=reverse("admin:%s_%s_changelist" % info),
+                queue=obj.queue.name,
+                status=JobStatus.CANCELED.value,
+                count=len(canceled_job_registry)
+            )
+        return self.get_empty_value_display()
 
-    def workers(self, obj):
+    @admin.display(
+        description=_("Workers"),
+        ordering="worker_count",
+    )
+    def view_workers(self, obj):
         if obj.queue:
             info = WorkerModel._meta.app_label, WorkerModel._meta.model_name
             return format_html(
@@ -202,24 +284,28 @@ class QueueModelAdmin(RedisModelAdminBase):
                 queue=obj.name,
                 count=obj.worker_count
             )
-    workers.short_description = _("Workers")
-    workers.admin_order_field = "worker_count"
-    workers.allow_tags = True
+        return self.get_empty_value_display()
 
-    def location(self, obj):
+    @admin.display(
+        description=_("Location"),
+    )
+    def view_location(self, obj):
         if obj.queue:
             connection_kwargs = obj.queue.connection.connection_pool.connection_kwargs
             return "{host}:{port}".format(
                 host=connection_kwargs.get("host", "localhost"),
                 port=connection_kwargs.get("port", 6379),
             )
-    location.short_description = _("Location")
+        return self.get_empty_value_display()
 
-    def db_index(self, obj):
+    @admin.display(
+        description=_("DB"),
+    )
+    def view_db_index(self, obj):
         if obj.queue:
             connection_kwargs = obj.queue.connection.connection_pool.connection_kwargs
             return connection_kwargs["db"]
-    db_index.short_description = _("DB")
+        return self.get_empty_value_display()
 
 
 class WorkerQueueFilter(SimpleListFilter):
@@ -250,49 +336,60 @@ class WorkerModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "name", "queues"
+                "name", "view_queues"
             )
         }),
         (_("State"), {
             "fields": (
-                "state", "job",
+                "view_state", "view_current_job",
             )
         }),
         (_("Statistics"), {
             "fields": (
-                "successful_job_count", "failed_job_count", "total_working_time"
+                "view_successful_job_count", "view_failed_job_count",
+                "view_total_working_time"
             )
         }),
         (_("Process"), {
             "fields": (
-                "pid", "hostname", "ip_address", "birth_date", "last_heartbeat"
+                "pid", "hostname", "ip_address", "view_birth_date", "view_last_heartbeat"
             )
         }),
         (_("Redis server"), {
             "fields": (
-                "location", "db_index"
+                "view_location", "view_db_index"
             )
         }),
     )
     change_form_template = "paper_rq/worker_changeform.html"
     object_history = False
     list_filter = [WorkerQueueFilter]
-    list_display = ["name", "pid", "hostname", "state", "birth_date", "location", "db_index"]
+    list_display = ["name", "pid", "hostname", "view_state", "view_birth_date",
+                    "view_location", "view_db_index"]
 
     def has_delete_permission(self, request, obj=None):
         return False
 
-    def queues(self, obj):
+    @admin.display(
+        description=_("Queues")
+    )
+    def view_queues(self, obj):
         if obj.worker:
             return ', '.join(obj.worker.queue_names())
-    queues.short_description = _("Queues")
+        return self.get_empty_value_display()
 
-    def state(self, obj):
+    @admin.display(
+        description=_("State")
+    )
+    def view_state(self, obj):
         if obj.worker:
             return obj.state
-    state.short_description = _("State")
+        return self.get_empty_value_display()
 
-    def job(self, obj):
+    @admin.display(
+        description=_("Current job")
+    )
+    def view_current_job(self, obj):
         if obj.worker:
             job = obj.worker.get_current_job()
             if job:
@@ -302,39 +399,76 @@ class WorkerModelAdmin(RedisModelAdminBase):
                     url=reverse("admin:%s_%s_change" % info, args=(job.id, )),
                     job=job.id
                 )
-
         return self.get_empty_value_display()
-    job.short_description = _("Current job")
 
-    def successful_job_count(self, obj):
+    @admin.display(
+        description=_("Successful job count")
+    )
+    def view_successful_job_count(self, obj):
         if obj.worker:
             return obj.worker.successful_job_count
-    successful_job_count.short_description = _("Successful job count")
+        return self.get_empty_value_display()
 
-    def failed_job_count(self, obj):
+    @admin.display(
+        description=_("Failed job count")
+    )
+    def view_failed_job_count(self, obj):
         if obj.worker:
             return obj.worker.failed_job_count
-    failed_job_count.short_description = _("Failed job count")
+        return self.get_empty_value_display()
 
-    def total_working_time(self, obj):
+    @admin.display(
+        description=_("Total working time")
+    )
+    def view_total_working_time(self, obj):
         if obj.worker:
             return obj.worker.total_working_time
-    total_working_time.short_description = _("Total working time")
+        return self.get_empty_value_display()
 
-    def location(self, obj):
+    def _view_datetime(self, date):
+        if date:
+            return format_html(
+                '<span title="{full_time}">{humanized_time}</span>',
+                humanized_time=naturaltime(date),
+                full_time=display_for_value(date, self.get_empty_value_display())
+            )
+        else:
+            return self.get_empty_value_display()
+
+    @admin.display(
+        description=WorkerModel._meta.get_field("birth_date").verbose_name,
+        ordering="birth_date"
+    )
+    def view_birth_date(self, obj):
+        return self._view_datetime(obj.birth_date)
+
+    @admin.display(
+        description=WorkerModel._meta.get_field("last_heartbeat").verbose_name,
+        ordering="last_heartbeat"
+    )
+    def view_last_heartbeat(self, obj):
+        return self._view_datetime(obj.last_heartbeat)
+
+    @admin.display(
+        description=_("Location")
+    )
+    def view_location(self, obj):
         if obj.worker:
             connection_kwargs = obj.worker.connection.connection_pool.connection_kwargs
             return "{host}:{port}".format(
                 host=connection_kwargs.get("host", "localhost"),
                 port=connection_kwargs.get("port", 6379),
             )
-    location.short_description = _("Location")
+        return self.get_empty_value_display()
 
-    def db_index(self, obj):
+    @admin.display(
+        description=_("DB")
+    )
+    def view_db_index(self, obj):
         if obj.worker:
             connection_kwargs = obj.worker.connection.connection_pool.connection_kwargs
             return connection_kwargs["db"]
-    db_index.short_description = _("DB")
+        return self.get_empty_value_display()
 
 
 class JobQueueFilter(SimpleListFilter):
@@ -389,6 +523,9 @@ class JobStatusFilter(SimpleListFilter):
         ])
 
 
+@admin.display(
+    description=_("Requeue selected jobs")
+)
 def requeue_job_action(modeladmin, request, queryset):
     count = 0
     for job_model in queryset:
@@ -403,9 +540,9 @@ def requeue_job_action(modeladmin, request, queryset):
     })
 
 
-requeue_job_action.short_description = _("Requeue selected jobs")
-
-
+@admin.display(
+    description=_("Stop selected jobs")
+)
 def stop_job_action(modeladmin, request, queryset):
     count = 0
     for job_model in queryset:
@@ -424,30 +561,29 @@ def stop_job_action(modeladmin, request, queryset):
     })
 
 
-stop_job_action.short_description = _("Stop selected jobs")
-
-
 @admin.register(JobModel)
 class JobModelAdmin(RedisModelAdminBase):
     fieldsets = (
         (None, {
             "fields": (
-                "id", "description", "queue", "dependency", "timeout", "ttl", "status",
+                "id", "description", "queue", "view_depends_on", "timeout",
+                "view_ttl", "view_status",
             )
         }),
         (_("Callable"), {
             "fields": (
-                "callable_display", "meta_display",
+                "view_callable", "view_meta",
             )
         }),
         (_("Result"), {
             "fields": (
-                "result_display", "exception_display",
+                "view_result", "view_exception",
             )
         }),
         (_("Important Dates"), {
             "fields": (
-                "created_at", "scheduled_on", "enqueued_at", "started_at", "ended_at"
+                "view_created_at", "view_scheduled_on", "view_enqueued_at",
+                "view_started_at", "view_ended_at", "view_duration"
             )
         }),
     )
@@ -458,7 +594,8 @@ class JobModelAdmin(RedisModelAdminBase):
     ordering = ["-enqueue_time"]
     search_fields = ["pk", "callable", "result", "exception"]
     list_filter = [JobQueueFilter, JobStatusFilter]
-    list_display = ["id_display", "func_display", "queue", "status", "enqueued_at_display"]
+    list_display = ["view_id", "view_short_callable", "queue", "view_status",
+                    "view_enqueued_at", "view_duration"]
     tabs = [
         ('general', _('General')),
         ('results', _('Latest results')),
@@ -599,43 +736,21 @@ class JobModelAdmin(RedisModelAdminBase):
             if job:
                 job.delete()
 
-    def status(self, obj):
-        if obj.job:
-            return obj.status.value
-    status.short_description = _("Status")
-
-    def id_display(self, obj):
+    @admin.display(
+        description=_("ID"),
+        ordering="id"
+    )
+    def view_id(self, obj):
         if obj.invalid:
             icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
             return format_html("<img src=\"{}\" width=20 height=20 class=\"align-text-bottom\" alt=\"\">"
                                "<span class=\"ml-1\">{}</span>", icon_url, obj.id)
         return obj.id
-    id_display.short_description = _("ID")
 
-    def func_display(self, obj):
-        if obj.invalid:
-            return ""
-
-        job = obj.job
-
-        full_path = helpers.get_job_func_repr(job)
-        short_path = helpers.get_job_func_short_repr(job)
-
-        return format_html(
-            '<span title="{full_path}">{short_path}</span>',
-            short_path=short_path,
-            full_path=full_path
-        )
-    func_display.short_description = _("Function")
-
-    def enqueued_at_display(self, obj):
-        if obj.enqueued_at:
-            return obj.enqueued_at
-        return self.get_empty_value_display()
-    enqueued_at_display.short_description = JobModel._meta.get_field("enqueued_at").verbose_name
-    enqueued_at_display.admin_order_field = "enqueue_time"
-
-    def dependency(self, obj):
+    @admin.display(
+        description=_("Depends On"),
+    )
+    def view_depends_on(self, obj):
         if obj.job:
             dependency_id = obj.job._dependency_id
             if dependency_id:
@@ -645,19 +760,46 @@ class JobModelAdmin(RedisModelAdminBase):
                     url=reverse("admin:%s_%s_change" % info, args=(dependency_id,)),
                     job=dependency_id
                 )
-
         return self.get_empty_value_display()
-    dependency.short_description = _("Depends On")
 
-    def ttl(self, obj):
+    @admin.display(
+        description=_("TTL"),
+    )
+    def view_ttl(self, obj):
         if obj.job:
             seconds = obj.job.connection.ttl(obj.job.key)
             if seconds == -1:
                 return "Infinite"
             return timedelta(seconds=seconds)
-    ttl.short_description = _("TTL")
 
-    def callable_display(self, obj):
+    @admin.display(
+        description=_("Status"),
+    )
+    def view_status(self, obj):
+        if obj.job:
+            return obj.status.value
+
+    @admin.display(
+        description=JobModel._meta.get_field("callable").verbose_name,
+    )
+    def view_short_callable(self, obj):
+        if obj.invalid:
+            return self.get_empty_value_display()
+
+        job = obj.job
+        full_path = helpers.get_job_func_repr(job)
+        short_path = helpers.get_job_func_short_repr(job)
+
+        return format_html(
+            '<span title="{full_path}">{short_path}</span>',
+            short_path=short_path,
+            full_path=full_path
+        )
+
+    @admin.display(
+        description=JobModel._meta.get_field("callable").verbose_name,
+    )
+    def view_callable(self, obj):
         if obj.invalid:
             icon_url = staticfiles_storage.url("paper_rq/invalid.svg")
             return format_html("<code>"
@@ -665,33 +807,99 @@ class JobModelAdmin(RedisModelAdminBase):
                                "<span class=\"align-text-top ml-1\">{}</span>"
                                "</code>", icon_url, _("Deserialization error"))
         return format_html("<code>{}</code>", obj.callable)
-    callable_display.short_description = JobModel._meta.get_field("callable").verbose_name
 
-    def result_display(self, obj):
+    @admin.display(
+        description=JobModel._meta.get_field("meta").verbose_name,
+    )
+    def view_meta(self, obj):
+        return obj.meta or self.get_empty_value_display()
+
+    @admin.display(
+        description=JobModel._meta.get_field("result").verbose_name,
+    )
+    def view_result(self, obj):
         if obj.result:
             return format_html("<pre>{}</pre>", obj.result)
         return self.get_empty_value_display()
-    result_display.short_description = JobModel._meta.get_field("result").verbose_name
 
-    def exception_display(self, obj):
+    @admin.display(
+        description=JobModel._meta.get_field("exception").verbose_name,
+    )
+    def view_exception(self, obj):
         if obj.exception:
             return format_html("<pre>{}</pre>", obj.exception)
         return self.get_empty_value_display()
-    exception_display.short_description = JobModel._meta.get_field("exception").verbose_name
 
-    def meta_display(self, obj):
-        if obj.meta:
-            return obj.meta
+    def _view_datetime(self, date):
+        if date:
+            return format_html(
+                '<span title="{full_time}">{humanized_time}</span>',
+                humanized_time=naturaltime(date),
+                full_time=display_for_value(date, self.get_empty_value_display())
+            )
+        else:
+            return self.get_empty_value_display()
+
+    @admin.display(
+        description=JobModel._meta.get_field("created_at").verbose_name,
+        ordering="created_at"
+    )
+    def view_created_at(self, obj):
+        return self._view_datetime(obj.created_at)
+
+    @admin.display(
+        description=_("Scheduled on"),
+    )
+    def view_scheduled_on(self, obj):
+        if not obj.job.is_scheduled:
+            return self.get_empty_value_display()
+
+        scheduler = helpers.get_job_scheduler(obj.job)
+        if not scheduler:
+            return self.get_empty_value_display()
+
+        for job, scheduled_on in scheduler.get_jobs(with_times=True):
+            if job.origin == obj.job.origin and job.id == obj.id:
+                utc_time = helpers.format_datetime(scheduled_on)
+                return self._view_datetime(utc_time)
+
         return self.get_empty_value_display()
-    meta_display.short_description = JobModel._meta.get_field("meta").verbose_name
 
-    def scheduled_on(self, obj):
-        if obj.job.is_scheduled:
-            scheduler = helpers.get_job_scheduler(obj.job)
-            if scheduler:
-                for job, scheduled_on in scheduler.get_jobs(with_times=True):
-                    if job.origin == obj.job.origin and job.id == obj.id:
-                        return formats.localize(localtime(scheduled_on.replace(tzinfo=timezone.utc)))
+    @admin.display(
+        description=JobModel._meta.get_field("enqueued_at").verbose_name,
+        ordering="enqueue_time"
+    )
+    def view_enqueued_at(self, obj):
+        return self._view_datetime(obj.enqueued_at)
 
+    @admin.display(
+        description=JobModel._meta.get_field("started_at").verbose_name,
+        ordering="started_at"
+    )
+    def view_started_at(self, obj):
+        return self._view_datetime(obj.started_at)
+
+    @admin.display(
+        description=JobModel._meta.get_field("ended_at").verbose_name,
+        ordering="ended_at"
+    )
+    def view_ended_at(self, obj):
+        return self._view_datetime(obj.ended_at)
+
+    @admin.display(
+        description=_("Duration"),
+    )
+    def view_duration(self, obj):
+        duration = obj.duration
+        if duration:
+            total_seconds = int(duration.total_seconds())
+            microseconds = math.ceil(duration.microseconds / 1000)
+            if not total_seconds:
+                return "{}ms".format(microseconds)
+            elif total_seconds < 5:
+                return "{}.{:03}s".format(total_seconds, microseconds)
+            elif total_seconds < 60:
+                return "{}s".format(total_seconds)
+            else:
+                return timedelta(seconds=math.ceil(total_seconds))
         return self.get_empty_value_display()
-    scheduled_on.short_description = _("Scheduled on")
