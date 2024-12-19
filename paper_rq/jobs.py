@@ -16,6 +16,9 @@ class Job(DefaultJob):
 
     @property
     def stdout(self):
+        if self._stdout is not None:
+            return self._stdout
+
         if self.supports_redis_streams:
             if not self._cached_result:
                 self._cached_result = self.latest_result()
@@ -23,10 +26,10 @@ class Job(DefaultJob):
             if self._cached_result:
                 return getattr(self._cached_result, "stdout", None)
 
-        if self._stdout is None:
-            rv = self.connection.hget(self.key, "stdout")
-            if rv is not None:
-                self._stdout = as_text(rv)
+        # Fallback to old behavior of getting stdout from job hash
+        rv = self.connection.hget(self.key, "stdout")
+        if rv is not None:
+            self._stdout = as_text(rv)
         return self._stdout
 
     def _execute(self):
@@ -44,7 +47,7 @@ class Job(DefaultJob):
         if self._stdout is not None:
             obj["stdout"] = self._stdout
         return obj
-    
+
     def restore(self, raw_data):
         super().restore(raw_data)
         obj = decode_redis_hash(raw_data)
