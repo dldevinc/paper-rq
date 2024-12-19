@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.8.5](https://github.com/dldevinc/paper-rq/tree/v0.8.5) - 2024-12-20
+
+### Features
+
+-   Added `Duration` field.
+-   Minor refactoring.
+
 ## [0.8.4](https://github.com/dldevinc/paper-rq/tree/v0.8.4) - 2024-12-19
 
 ### Bug Fixes
