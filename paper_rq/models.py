@@ -230,6 +230,11 @@ class JobModel(models.Model):
             or helpers.format_datetime(datetime.datetime(datetime.MINYEAR, 1, 1))
         )
 
+    @property
+    def duration(self):
+        if self.ended_at:
+            return self.ended_at - self.started_at
+
     def latest_results(self):
         """
         Возвращает последние 10 результатов.
